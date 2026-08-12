@@ -4,7 +4,8 @@ import {
 import type { Item, FilterOption } from '../types/main';
 import type { ClientSortOptions, EmitsEventName } from '../types/internal';
 import {
-  getItemValue, escapeRegExp, toSearchString, compareValues, itemsEqual,
+  getItemValue, escapeRegExp, toSearchString, compareValues,
+  itemsMatch, getItemIdentity, buildIdentitySet,
 } from '../utils';
 
 export default function useTotalItems(
@@ -17,6 +18,7 @@ export default function useTotalItems(
   searchValue: Ref<string>,
   serverItemsLength: Ref<number>,
   multiSort: Ref<boolean>,
+  itemKey: Ref<string>,
   emits: (event: EmitsEventName, ...args: any[]) => void,
 ) {
   const generateSearchingTarget = (item: Item): string => {
@@ -89,8 +91,11 @@ export default function useTotalItems(
   function recursionMuiltSort(sortByArr: string[], sortDescArr: boolean[], itemsToSort: Item[], index: number): Item[] {
     const sortBy = sortByArr[index];
     const sortDesc = sortDescArr[index];
-    const sorted = (index === 0 ? itemsToSort
-      : recursionMuiltSort(sortByArr, sortDescArr, itemsToSort, index - 1)).sort((a: Item, b: Item) => {
+    // Always sort a copy — never mutate the input array inside a computed path.
+    const base = index === 0
+      ? itemsToSort
+      : recursionMuiltSort(sortByArr, sortDescArr, itemsToSort, index - 1);
+    return [...base].sort((a: Item, b: Item) => {
       let isAllSame = true;
       for (let i = 0; i < index; i += 1) {
         if (getItemValue(sortByArr[i], a) !== getItemValue(sortByArr[i], b)) {
@@ -106,7 +111,6 @@ export default function useTotalItems(
       }
       return 0;
     });
-    return sorted;
   }
 
   // flow: searching => filtering => sorting
@@ -122,7 +126,7 @@ export default function useTotalItems(
       return recursionMuiltSort(sortBy, sortDesc, itemsFilteringSorted, sortBy.length - 1);
     }
 
-    return itemsFilteringSorted.sort((a, b) => {
+    return [...itemsFilteringSorted].sort((a, b) => {
       const compared = compareValues(getItemValue(sortBy as string, a), getItemValue(sortBy as string, b));
       if (compared < 0) return sortDesc ? 1 : -1;
       if (compared > 0) return sortDesc ? -1 : 1;
@@ -141,31 +145,52 @@ export default function useTotalItems(
   });
 
   const toggleSelectAll = (isChecked: boolean): void => {
+    const key = itemKey.value;
+
     // Server-side: only the current page is in `items`/`totalItems`.
     // Merge/remove current page into existing selection so cross-page selection works.
     if (isServerSideMode.value) {
       if (isChecked) {
-        const merged = [...selectItemsComputed.value];
-        totalItems.value.forEach((item) => {
-          if (!merged.some((selected) => itemsEqual(selected, item))) {
-            merged.push(item);
-          }
-        });
-        selectItemsComputed.value = merged;
+        if (key) {
+          const selectedKeys = buildIdentitySet(selectItemsComputed.value, key);
+          const merged = [...selectItemsComputed.value];
+          totalItems.value.forEach((item) => {
+            const id = getItemIdentity(item, key);
+            if (id !== undefined && !selectedKeys.has(id)) {
+              selectedKeys.add(id);
+              merged.push(item);
+            }
+          });
+          selectItemsComputed.value = merged;
+        } else {
+          const merged = [...selectItemsComputed.value];
+          totalItems.value.forEach((item) => {
+            if (!merged.some((selected) => itemsMatch(selected, item))) {
+              merged.push(item);
+            }
+          });
+          selectItemsComputed.value = merged;
+        }
         emits('selectAll');
+      } else if (key) {
+        const pageKeys = buildIdentitySet(totalItems.value, key);
+        selectItemsComputed.value = selectItemsComputed.value.filter((selected) => {
+          const id = getItemIdentity(selected, key);
+          return id === undefined || !pageKeys.has(id);
+        });
       } else {
         selectItemsComputed.value = selectItemsComputed.value.filter(
-          (selected) => !totalItems.value.some((item) => itemsEqual(selected, item)),
+          (selected) => !totalItems.value.some((item) => itemsMatch(selected, item)),
         );
       }
       return;
     }
 
-    selectItemsComputed.value = isChecked ? totalItems.value : [];
+    selectItemsComputed.value = isChecked ? [...totalItems.value] : [];
     if (isChecked) emits('selectAll');
   };
 
-  const toggleSelectItem = (item: Item):void => {
+  const toggleSelectItem = (item: Item): void => {
     const isAlreadyChecked = item.checkbox;
 
     delete item.checkbox;
@@ -177,8 +202,17 @@ export default function useTotalItems(
       selectItemsComputed.value = selectItemsArr;
       emits('selectRow', item);
     } else {
-      selectItemsComputed.value = selectItemsComputed.value.filter((selectedItem) => JSON.stringify(selectedItem)
-        !== JSON.stringify(item));
+      const key = itemKey.value;
+      if (key) {
+        const id = getItemIdentity(item, key);
+        selectItemsComputed.value = selectItemsComputed.value.filter(
+          (selectedItem) => getItemIdentity(selectedItem, key) !== id,
+        );
+      } else {
+        // Legacy: JSON.stringify identity (preserves prior omit-key behavior).
+        selectItemsComputed.value = selectItemsComputed.value.filter((selectedItem) => JSON.stringify(selectedItem)
+          !== JSON.stringify(item));
+      }
       emits('deselectRow', item);
     }
   };

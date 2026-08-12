@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0-alpha.3
+
+Phase 2 — identity + performance foundation:
+
+- **`item-key` prop** (additive): optional field path for stable row identity. When set, select/expand identity and `v-for` keys use the key instead of `JSON.stringify` / index. Omit for drop-in legacy behavior.
+- **Hot paths**: client sort always sorts a copy (no in-place mutation of source arrays); keyed select-all / partial-select status use `Set` lookups.
+- **Bench harness**: `npm run bench` (optional, not CI-gated). See [docs/BENCHMARKS.md](./docs/BENCHMARKS.md).
+- **Recommendation**: use `item-key` for large datasets (10k+ rows). See [MIGRATION.md](./MIGRATION.md).
+
 ## 1.6.0-alpha.2
 
 Phase 1 leftovers:

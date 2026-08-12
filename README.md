@@ -5,7 +5,7 @@
 ## Introduction
 **vue-easy-data-table** is an actively maintained fork/successor of [vue3-easy-data-table](https://github.com/HC200ok/vue3-easy-data-table) — a customizable and easy-to-use data table component for Vue.js 3.x.
 
-See [MIGRATION.md](./MIGRATION.md) for package rename notes. The public component API (props/slots/emits) is unchanged.
+See [MIGRATION.md](./MIGRATION.md) for package rename notes. The public component API (props/slots/emits) remains compatible; Phase 2 adds an optional `item-key` for stable row identity on large datasets (see [docs/BENCHMARKS.md](./docs/BENCHMARKS.md)).
 
 ## Website
 https://hc200ok.github.io/vue3-easy-data-table-doc/ (upstream docs; still applicable)

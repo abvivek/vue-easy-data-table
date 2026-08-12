@@ -85,6 +85,15 @@ export default {
     type: Number,
     default: 60,
   },
+  /**
+   * Optional field path for stable row identity (supports nested `a.b`).
+   * When set: select/expand and `v-for` keys use this value instead of
+   * `JSON.stringify` / array index. Omit for drop-in legacy behavior.
+   */
+  itemKey: {
+    type: String,
+    default: '',
+  },
   itemsSelected: {
     type: Array as PropType<Item[]> | null,
     default: null,
