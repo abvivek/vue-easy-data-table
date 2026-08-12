@@ -7,6 +7,10 @@
 
 See [MIGRATION.md](./MIGRATION.md) for package rename notes. The public component API (props/slots/emits) remains compatible; Phase 2 adds optional `item-key`, Phase 3 adds opt-in tbody `virtual` / `virtual-row-height`, Phase 4 improves server-side page sync / `server-select-all`, and Phase 5 adds accessibility attributes and keyboard-friendly controls without breaking class hooks (see [docs/BENCHMARKS.md](./docs/BENCHMARKS.md)).
 
+## For AI agents
+
+Start at [AGENTS.md](./AGENTS.md) (install, critical rules, pitfalls). Full surface: [docs/API.md](./docs/API.md). Copy-paste patterns: [docs/RECIPES.md](./docs/RECIPES.md).
+
 ## Website
 https://hc200ok.github.io/vue3-easy-data-table-doc/ (upstream docs; still applicable)
 

@@ -1,0 +1,20 @@
+---
+description: Keep vue-easy-data-table public API and agent docs in sync
+alwaysApply: true
+---
+
+# vue-easy-data-table — agent docs
+
+Before changing **public API** (props, slots, emits, `defineExpose`, CSS class hooks, package exports):
+
+1. Read `AGENTS.md` and `docs/API.md`.
+2. Prefer additive, drop-in-compatible changes. Do not break upstream-compatible behavior without an explicit major-version decision.
+3. Ground defaults and behavior in `src/propsWithDefault.ts`, `src/components/DataTable.vue`, and `types/main.d.ts` — do not invent props.
+
+When you **add or change** a public prop, slot, emit, expose member, or documented behavior:
+
+- Update `docs/API.md` in the same change.
+- Update `docs/RECIPES.md` and/or `MIGRATION.md` / `CHANGELOG.md` when the change is user-facing.
+- Keep `AGENTS.md` pitfalls/rules accurate if identity, virtual, server, or CSS import behavior changes.
+
+Consuming the library in an app? Follow AGENTS.md install/CSS path and prefer `item-key` for large/selectable/virtual tables.
