@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0-alpha.5
+
+Phase 4 — server-side DX (additive / safer behavior):
+
+- **Page sync**: Footer / `currentPaginationNumber` tracks `serverOptions.page` directly in server mode (no longer depends only on `loading` flipping `true → false`). Loading-edge sync and expand clear remain.
+- **Custom `serverOptions` fields (#388)**: `update:serverOptions` preserves unknown keys (filters, group IDs, etc.) on pagination / rows-per-page / sort emits.
+- **`server-select-all` prop** (`'page'` | `'all'`, default `'page'`): makes page-vs-all select-all intent explicit. Default keeps Phase 1 page-merge behavior; `'all'` signals full-result selection via `@select-all` (see [MIGRATION.md](./MIGRATION.md)).
+- **Docs**: Recommended server fetch loop (pagination / sort / loading) documented in MIGRATION.md (themes [#307](https://github.com/HC200ok/vue3-easy-data-table/issues/307), [#165](https://github.com/HC200ok/vue3-easy-data-table/issues/165)).
+
 ## 1.6.0-alpha.4
 
 Phase 3 — opt-in tbody virtualization (additive):

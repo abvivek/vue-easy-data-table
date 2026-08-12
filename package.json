@@ -3,7 +3,7 @@
   "author": "HC200ok",
   "description": "A customizable and easy-to-use data table component made with Vue.js 3.x. Actively maintained fork of vue3-easy-data-table.",
   "private": false,
-  "version": "1.6.0-alpha.4",
+  "version": "1.6.0-alpha.5",
   "types": "./types/main.d.ts",
   "license": "MIT",
   "files": [

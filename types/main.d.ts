@@ -41,7 +41,16 @@ export type ServerOptions = {
   rowsPerPage: number
   sortBy?: string | string[]
   sortType?: SortType | SortType[]
+  /** Custom fields are preserved on `update:serverOptions` (#388). */
+  [key: string]: any
 }
+
+/**
+ * Server-mode header select-all scope.
+ * - `page` (default): merge/remove only the current page into `itemsSelected`.
+ * - `all`: signal full-result selection via `selectAll`; replace/clear selection (see MIGRATION.md).
+ */
+export type ServerSelectAll = 'page' | 'all'
 
 export type ClickRowArgument = Item & {
   isSelected?: boolean

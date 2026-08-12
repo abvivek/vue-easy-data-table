@@ -26,6 +26,17 @@ export default function usePagination(
     }
   });
 
+  // Server mode: sync footer / currentPaginationNumber whenever parent updates
+  // serverOptions.page — do not rely only on the loading true→false edge.
+  watch(
+    () => (isServerSideMode.value ? serverOptions.value?.page : null),
+    (page) => {
+      if (typeof page === 'number' && page > 0 && page !== currentPaginationNumber.value) {
+        currentPaginationNumber.value = page;
+      }
+    },
+  );
+
   // When filtered/replaced data shrinks, clamp to a valid page so the table is not blank.
   watch(maxPaginationNumber, (max) => {
     if (isServerSideMode.value) return;
