@@ -134,7 +134,7 @@ table {
     .sortType-icon {
       border: 5px solid transparent;
       margin-top: -3px;
-      margin-left: 4px;
+      margin-inline-start: 4px;
       display: inline-block;
       height: 0;
       width: 0;
@@ -147,7 +147,7 @@ table {
       height: 1.5em;
       width: 1.5em;
       line-height: 1.5em;
-      margin-left: 4px;
+      margin-inline-start: 4px;
       background-color: var(--easy-table-header-font-color);
       color: var(--easy-table-header-background-color);
     }
@@ -239,6 +239,12 @@ table {
     padding: 3px;
     transform: rotate(-45deg);
     transition: 0.2s;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    line-height: 0;
+    box-sizing: content-box;
     &.expanding {
       transform: rotate(45deg);
     }
@@ -277,7 +283,23 @@ table {
     align-items: center;
   }
   .pagination__items-index {
-    margin: 0px 20px 0px 10px;
+    margin-block: 0;
+    margin-inline: 10px 20px;
+  }
+}
+
+/* RTL quick wins: mirror expand chevron and fixed-column shadow side */
+[dir="rtl"] {
+  .vue3-easy-data-table__body td .expand-icon {
+    transform: rotate(135deg);
+    &.expanding {
+      transform: rotate(45deg);
+    }
+  }
+  .vue3-easy-data-table__header th.shadow::after,
+  .vue3-easy-data-table__body td.shadow::after {
+    right: auto;
+    left: -36px;
   }
 }
 .vue3-easy-data-table__message {

@@ -16,7 +16,11 @@
         'border-cell': borderCell,
       }"
     >
-      <table :id="tableNodeId">
+      <table
+        :id="tableNodeId"
+        :aria-busy="loading ? 'true' : undefined"
+        :aria-rowcount="totalItemsLength || undefined"
+      >
         <colgroup>
           <col
             v-for="(header, index) in headersForRender"
@@ -46,7 +50,11 @@
               // eslint-disable-next-line max-len
               }, typeof headerItemClassName === 'string' ? headerItemClassName : headerItemClassName(header as Header, index + 1)]"
               :style="getFixedDistance(header.value)"
+              :aria-sort="header.sortable ? ariaSortValue(header.sortType) : undefined"
+              :tabindex="(header.sortable && header.sortType) ? 0 : undefined"
+              :scope="header.text === 'checkbox' ? undefined : 'col'"
               @click.stop="(header.sortable && header.sortType) ? updateSortField(header.value, header.sortType) : null"
+              @keydown="(header.sortable && header.sortType) ? onSortableHeaderKeydown($event, header.value, header.sortType) : null"
             >
               <MultipleSelectCheckBox
                 v-if="header.text === 'checkbox'"
@@ -85,10 +93,12 @@
                   :key="header.sortType ? header.sortType : 'none'"
                   class="sortType-icon"
                   :class="{'desc': header.sortType === 'desc'}"
+                  aria-hidden="true"
                 ></i>
                 <span
                   v-if="multiSort && isMultiSorting(header.value)"
                   class="multi-sort__number"
+                  aria-hidden="true"
                 >
                   {{ getMultiSortNumber(header.value) }}
                 </span>
@@ -232,6 +242,8 @@
     <div
       v-if="!hideFooter"
       class="vue3-easy-data-table__footer"
+      role="navigation"
+      aria-label="Table pagination"
     >
       <div
         v-if="!hideRowsPerPage"
@@ -243,7 +255,10 @@
           :rows-items="rowsItemsComputed"
         />
       </div>
-      <div class="pagination__items-index">
+      <div
+        class="pagination__items-index"
+        aria-live="polite"
+      >
         {{ `${currentPageFirstIndex}–${currentPageLastIndex}` }}
         {{ rowsOfPageSeparatorMessage }} {{ totalItemsLength }}
       </div>
@@ -304,7 +319,7 @@ import useServerOptions from '../hooks/useServerOptions';
 import useTotalItems from '../hooks/useTotalItems';
 import useVirtualRows from '../hooks/useVirtualRows';
 
-import type { Header, Item } from '../types/main';
+import type { Header, Item, SortType } from '../types/main';
 import type { HeaderForRender } from '../types/internal';
 
 import { getItemIdentity } from '../utils';
@@ -626,7 +641,26 @@ const {
 const contextMenuRow = (item: Item, $event: MouseEvent) => {
   if (preventContextMenuRow.value) $event.preventDefault();
   emits('contextmenuRow', item, $event);
-}
+};
+
+/** Map internal sortType to WAI-ARIA aria-sort values. */
+const ariaSortValue = (
+  sortType: SortType | 'none' | undefined,
+): 'none' | 'ascending' | 'descending' => {
+  if (sortType === 'asc') return 'ascending';
+  if (sortType === 'desc') return 'descending';
+  return 'none';
+};
+
+const onSortableHeaderKeydown = (
+  event: KeyboardEvent,
+  column: string,
+  sortType: SortType | 'none',
+) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  updateSortField(column, sortType);
+};
 
 // template style generation function
 const getColStyle = (header: HeaderForRender): string | undefined => {

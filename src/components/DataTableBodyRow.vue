@@ -29,15 +29,20 @@
         v-bind="item"
       />
       <template v-else-if="column === 'expand'">
-        <i
+        <button
           v-if="isRowExpandable(item)"
+          type="button"
           class="expand-icon"
           :class="{ 'expanding': isRowExpanding(prevPageEndIndex + index, item) }"
-        />
+          :aria-expanded="isRowExpanding(prevPageEndIndex + index, item) ? 'true' : 'false'"
+          :aria-label="isRowExpanding(prevPageEndIndex + index, item) ? 'Collapse row' : 'Expand row'"
+          @click.stop="updateExpandingItemIndexList(index + prevPageEndIndex, item, $event)"
+        ></button>
       </template>
       <template v-else-if="column === 'checkbox'">
         <SingleSelectCheckBox
           :checked="item[column]"
+          :aria-label="`Select row ${index + 1}`"
           @change="toggleSelectItem(item)"
         />
       </template>

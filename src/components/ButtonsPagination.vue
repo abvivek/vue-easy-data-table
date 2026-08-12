@@ -1,19 +1,35 @@
 <template>
-  <div class="buttons-pagination">
-    <div
+  <div
+    class="buttons-pagination"
+    role="group"
+    aria-label="Pagination"
+  >
+    <template
       v-for="(item, i) in paginationItemsForRender"
       :key="i"
-      class="item"
-      :class="{
-        button: item.type === 'button',
-        active: item.type === 'button' && item.active,
-        'active-prev': item.type === 'button' && item.activePrev,
-        omission: item.type === 'omission',
-      }"
-      @click="changePage(item)"
     >
-      {{ item.type === 'button' ? item.page : '...' }}
-    </div>
+      <button
+        v-if="item.type === 'button'"
+        type="button"
+        class="item button"
+        :class="{
+          active: item.active,
+          'active-prev': item.activePrev,
+        }"
+        :aria-label="`Page ${item.page}`"
+        :aria-current="item.active ? 'page' : undefined"
+        @click="changePage(item)"
+      >
+        {{ item.page }}
+      </button>
+      <span
+        v-else
+        class="item omission"
+        aria-hidden="true"
+      >
+        ...
+      </span>
+    </template>
   </div>
 </template>
 
@@ -179,6 +195,11 @@ const themeColor = inject('themeColor');
     border-bottom: var(--easy-table-buttons-pagination-border);
     border-right: var(--easy-table-buttons-pagination-border);
     text-align: center;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    padding: 0;
+    appearance: none;
     &:first-of-type  {
       border-left: var(--easy-table-buttons-pagination-border);
       border-top-left-radius: 4px;

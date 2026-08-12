@@ -1,22 +1,34 @@
 <template>
-  <div
+  <button
+    type="button"
     class="previous-page__click-button"
     :class="{'first-page': isFirstPage}"
+    aria-label="Previous page"
+    :disabled="isFirstPage"
     @click="emits('clickPrevPage')"
   >
-    <span class="arrow arrow-right"></span>
-  </div>
+    <span
+      class="arrow arrow-right"
+      aria-hidden="true"
+    ></span>
+  </button>
   <slot
     v-if="slots.buttonsPagination"
     name="buttonsPagination"
   />
-  <div
+  <button
+    type="button"
     class="next-page__click-button"
     :class="{'last-page': isLastPage}"
+    aria-label="Next page"
+    :disabled="isLastPage"
     @click="emits('clickNextPage')"
   >
-    <span class="arrow arrow-left"></span>
-  </div>
+    <span
+      class="arrow arrow-left"
+      aria-hidden="true"
+    ></span>
+  </button>
 </template>
 
 <script lang="ts" setup>
@@ -35,6 +47,12 @@ const slots = useSlots();
   .previous-page__click-button, .next-page__click-button {
     margin: 0px 5px;
     cursor: pointer;
+    background: transparent;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    line-height: 1;
     .arrow {
       display: inline-block;
       width: 8px;
@@ -49,7 +67,8 @@ const slots = useSlots();
       }
     }
   }
-  .previous-page__click-button.first-page, .next-page__click-button.last-page {
+  .previous-page__click-button.first-page, .next-page__click-button.last-page,
+  .previous-page__click-button:disabled, .next-page__click-button:disabled {
     cursor: not-allowed;
     .arrow {
       border-color: #e0e0e0;
