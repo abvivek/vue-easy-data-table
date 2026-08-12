@@ -189,3 +189,20 @@ Unknown keys on `serverOptions` are **round-tripped** on `update:serverOptions` 
 ```
 
 Omit the prop (or use `'page'`) for existing cross-page merge behavior.
+
+### Additive (Phase 5) — accessibility
+
+No breaking API changes. CSS class names (`sortable`, `expand-icon`, `easy-checkbox`, `previous-page__click-button`, `next-page__click-button`, `buttons-pagination`, etc.) are unchanged.
+
+| Area | What changed |
+| --- | --- |
+| Sortable `<th>` | `aria-sort`, focusable when sortable, Enter/Space sorts |
+| Checkboxes | Accessible name + `aria-checked` (header + rows) |
+| Pagination | Native buttons + `aria-label` / `aria-current` |
+| Expand | `<button type="button">` with `aria-expanded` |
+| Loading | `aria-busy` on `<table>` |
+| RTL | Minor logical CSS / `[dir="rtl"]` mirrors only |
+
+Custom `#header` / `#item` / `#expand` / `#pagination` slots are unchanged — if you replace pagination or expand UI entirely, keep providing accessible names in your own markup.
+
+Deep right-to-left layout (full mirror of sticky columns, arrow glyphs, etc.) is **not** complete in this release; set `dir="rtl"` on an ancestor for the quick wins above.

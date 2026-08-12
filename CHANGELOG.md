@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0-alpha.6
+
+Phase 5 — accessibility (additive; class hooks preserved):
+
+- **Sortable headers**: `aria-sort` (`none` / `ascending` / `descending`), keyboard focus (`tabindex="0"`), Enter/Space activates sort (themes [#333](https://github.com/HC200ok/vue3-easy-data-table/issues/333)).
+- **Checkboxes**: header select-all and row checkboxes expose `role="checkbox"`, `aria-label`, `aria-checked` (incl. `mixed`) and keyboard activation ([#302](https://github.com/HC200ok/vue3-easy-data-table/issues/302)).
+- **Pagination**: prev/next and page controls are real `<button type="button">` with `aria-label` / `aria-current`; footer `role="navigation"`.
+- **Expand**: expand control is `<button type="button">` with `aria-expanded` and Expand/Collapse labels (not a bare `<i>`).
+- **Table**: keeps `table` / `thead` / `tbody`; `aria-busy` while loading; decorative sort/multi-sort icons `aria-hidden`.
+- **RTL quick wins**: logical margins for sort markers; `[dir="rtl"]` expand chevron + fixed-column shadow mirror ([#303](https://github.com/HC200ok/vue3-easy-data-table/issues/303) / [#368](https://github.com/HC200ok/vue3-easy-data-table/issues/368)). Deep RTL layout is deferred.
+
 ## 1.6.0-alpha.5
 
 Phase 4 — server-side DX (additive / safer behavior):

@@ -4,7 +4,14 @@
   >
     <div
       class="rows-input__wrapper"
+      role="button"
+      tabindex="0"
+      :aria-expanded="showList ? 'true' : 'false'"
+      aria-haspopup="listbox"
+      :aria-label="ariaLabel"
       @click="showList=!showList"
+      @keydown.enter.prevent="showList=!showList"
+      @keydown.space.prevent="showList=!showList"
     >
       <div class="rows-input">
         {{ rowsComputed }}
@@ -13,11 +20,15 @@
     </div>
     <ul
       class="select-items"
+      role="listbox"
+      :aria-label="ariaLabel"
       :class="{show: showList, inside: showInsideOfTable}"
     >
       <li
         v-for="item in rowsItems"
         :key="item"
+        role="option"
+        :aria-selected="item === rowsComputed"
         :class="{selected: item === rowsComputed }"
         @click="changeSelectedRows(item)"
       >
@@ -35,6 +46,7 @@ import {
 const props = defineProps({
   modelValue: { type: Number, required: true },
   rowsItems: { type: Array as PropType<number[]>, required: true },
+  ariaLabel: { type: String, default: 'Rows per page' },
 });
 
 const emits = defineEmits(['update:modelValue']);
