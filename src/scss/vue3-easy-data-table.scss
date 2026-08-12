@@ -39,7 +39,7 @@
     }
   }
   &.show-shadow {
-    th.shadow, td.shadow {
+    th.shadow, :deep(td.shadow) {
       &::after {
         box-shadow: inset 6px 0 5px -3px rgb(0 0 0 / 20%);
       }
@@ -49,17 +49,20 @@
     th {
       position: sticky;
       top: 0;
-      z-index: 2;
+      z-index: 3;
+    }
+    th.fixed-column {
+      z-index: 4;
     }
   }
   &.hoverable {
-    tr:hover td {
+    :deep(tr:hover td) {
       background-color: var(--easy-table-body-row-hover-background-color);
       color: var(--easy-table-body-row-hover-font-color);
     }
 
     .vue3-easy-data-table__body.row-alternation {
-      .even-row:hover td {
+      :deep(.even-row:hover td) {
         color: var(--easy-table-body-row-hover-font-color);
         background-color: var(--easy-table-body-row-hover-background-color);
       }
@@ -74,17 +77,17 @@
       border-right: none;
     }
 
-    .vue3-easy-data-table__body td {
+    .vue3-easy-data-table__body :deep(td) {
       border-right: var(--easy-table-row-border);
     }
-    .vue3-easy-data-table__body td:last-of-type {
+    .vue3-easy-data-table__body :deep(td:last-of-type) {
       border-right: none;
     }
   }
 }
 
 .vue3-easy-data-table__body.row-alternation {
-  tr.even-row td {
+  :deep(tr.even-row td) {
     color: var(--easy-table-body-even-row-font-color);
     background-color: var(--easy-table-body-even-row-background-color);
   }
@@ -98,7 +101,7 @@ table {
   margin: 0px;
 }
 // fixed-columns feature related
-.vue3-easy-data-table__header, vue3-easy-data-table__body {
+.vue3-easy-data-table__header, .vue3-easy-data-table__body {
   position: relative;
 }
 .vue3-easy-data-table__header tr {
@@ -114,7 +117,6 @@ table {
 
   padding: var(--easy-table-header-item-padding);
 
-  position: relative;
   .header {
     display: flex;
     align-items: center;
@@ -173,7 +175,7 @@ table {
 }
 
 // fixed-columns feature related
-.vue3-easy-data-table__header th, .vue3-easy-data-table__body td {
+.vue3-easy-data-table__header th, .vue3-easy-data-table__body :deep(td) {
   &.shadow {
     &::after {
       pointer-events: none;
@@ -188,16 +190,21 @@ table {
     }
   }
 }
-.vue3-easy-data-table__body tr {
+
+.vue3-easy-data-table__header th.fixed-column {
+  background-color: var(--easy-table-header-background-color);
+  z-index: 4;
+}
+
+.vue3-easy-data-table__body :deep(td.fixed-column) {
+  background-color: var(--easy-table-body-row-background-color);
+  z-index: 2;
+}
+.vue3-easy-data-table__body :deep(tr) {
   height: var(--easy-table-body-row-height);
   color: var(--easy-table-body-row-font-color);
   font-size: var(--easy-table-body-row-font-size);
 
-  // &:nth-child(-n+3) {
-  //   td {
-  //     border-bottom: var(--easy-table-row-border)!important;
-  //   }
-  // }
   &:last-child {
     td {
       border-bottom: none;
@@ -211,7 +218,7 @@ table {
   }
 }
 
-.vue3-easy-data-table__body td {
+.vue3-easy-data-table__body :deep(td) {
   padding: var(--easy-table-body-item-padding);
   background-color: var(--easy-table-body-row-background-color);
   border: none;
@@ -229,7 +236,6 @@ table {
     text-align: right;
   }
 
-  position: relative;
   .expand-icon {
     border: solid;
     border-color: var(--easy-table-body-row-font-color);
@@ -252,7 +258,7 @@ table {
 }
 
 // expandable row feature related
-.vue3-easy-data-table__body td.expand {
+.vue3-easy-data-table__body :deep(td.expand) {
   position: relative;
   .expand-loading {
     position: absolute;
@@ -260,7 +266,7 @@ table {
     left: 0px;
   }
 }
-.vue3-easy-data-table__body td.can-expand {
+.vue3-easy-data-table__body :deep(td.can-expand) {
   cursor: pointer;
 }
 
@@ -290,14 +296,14 @@ table {
 
 /* RTL quick wins: mirror expand chevron and fixed-column shadow side */
 [dir="rtl"] {
-  .vue3-easy-data-table__body td .expand-icon {
+  .vue3-easy-data-table__body :deep(td .expand-icon) {
     transform: rotate(135deg);
     &.expanding {
       transform: rotate(45deg);
     }
   }
   .vue3-easy-data-table__header th.shadow::after,
-  .vue3-easy-data-table__body td.shadow::after {
+  .vue3-easy-data-table__body :deep(td.shadow)::after {
     right: auto;
     left: -36px;
   }

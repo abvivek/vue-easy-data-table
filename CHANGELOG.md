@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.0-alpha.7
+
+Bugfix — sticky/fixed columns overlapping scrolling cells:
+
+- Sticky `left` now follows **painted** column widths (ResizeObserver / `offsetWidth` of header cells). Fallback when layout cannot be measured: configured `width` + horizontal cell padding (default `0px 10px` → +20px).
+- Fixed cells use an opaque background, `position: sticky`, and higher z-index (body `2`, header corner `4`) so scrolling cells cannot paint through them. Blanket `position: relative` on every `td`/`th` was removed (kept on expand cells).
+- Checkbox / index / expand pinned columns share the same distance chain. Header and body `left` stay in sync. Last-fixed shadow stays on the last frozen cell.
+- Tables with fixed columns get `min-width` from the column-width sum so `width: 100%` + `table-layout: fixed` can still stretch, while sticky offsets track the stretched widths.
+- Body cell styles pierce `DataTableBodyRow` via `:deep()` (padding, background, hover, shadow).
+
+See [MIGRATION.md](./MIGRATION.md).
+
 ## 1.6.0-alpha.6
 
 Phase 5 — accessibility (additive; class hooks preserved):

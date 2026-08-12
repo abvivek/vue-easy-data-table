@@ -18,6 +18,7 @@
     >
       <table
         :id="tableNodeId"
+        :style="fixedTableMinWidthStyle"
         :aria-busy="loading ? 'true' : undefined"
         :aria-rowcount="totalItemsLength || undefined"
       >
@@ -47,6 +48,7 @@
                 'desc': header.sortable && header.sortType === 'desc',
                 'asc': header.sortable && header.sortType === 'asc',
                 'shadow': header.value === lastFixedColumn,
+                'fixed-column': header.fixed,
               // eslint-disable-next-line max-len
               }, typeof headerItemClassName === 'string' ? headerItemClassName : headerItemClassName(header as Header, index + 1)]"
               :style="getFixedDistance(header.value)"
@@ -298,7 +300,8 @@
 
 <script setup lang="ts">
 import {
-  useSlots, computed, toRefs, toRef, ref, watch, provide, onMounted, PropType,
+  useSlots, computed, toRefs, toRef, ref, watch, provide, onMounted, onBeforeUnmount, nextTick, PropType,
+  type CSSProperties,
 } from 'vue';
 
 import MultipleSelectCheckBox from './MultipleSelectCheckBox.vue';
@@ -323,6 +326,14 @@ import type { Header, Item, SortType } from '../types/main';
 import type { HeaderForRender } from '../types/internal';
 
 import { getItemIdentity } from '../utils';
+import {
+  DEFAULT_CELL_HORIZONTAL_PADDING_PX,
+  FIXED_COLUMN_BODY_Z_INDEX,
+  FIXED_COLUMN_HEADER_Z_INDEX,
+  readCellHorizontalPadding,
+  readPaintedColumnWidths,
+  resolveColumnPaintedWidth,
+} from '../stickyColumns';
 import propsWithDefault from '../propsWithDefault';
 
 const props = defineProps({
@@ -407,12 +418,43 @@ const dataTable = ref();
 const tableBody = ref();
 provide('dataTable', dataTable);
 
-// fixed-columns shadow
+// fixed-columns shadow + painted-width observer
 const showShadow = ref(false);
+const measuredColumnWidths = ref<number[]>([]);
+const cellHorizontalPadding = ref(DEFAULT_CELL_HORIZONTAL_PADDING_PX);
+let columnWidthObserver: ResizeObserver | null = null;
+
+const measurePaintedColumnWidths = () => {
+  const root = tableBody.value as HTMLElement | undefined;
+  if (!root) {
+    if (measuredColumnWidths.value.length) measuredColumnWidths.value = [];
+    return;
+  }
+  const next = readPaintedColumnWidths(root);
+  const prev = measuredColumnWidths.value;
+  if (prev.length === next.length && prev.every((width, index) => width === next[index])) {
+    return;
+  }
+  measuredColumnWidths.value = next;
+};
+
 onMounted(() => {
-  tableBody.value.addEventListener('scroll', () => {
+  const tableRoot = dataTable.value as HTMLElement | undefined;
+  if (tableRoot) {
+    cellHorizontalPadding.value = readCellHorizontalPadding(
+      tableRoot,
+      '--easy-table-body-item-padding',
+    );
+  }
+
+  tableBody.value?.addEventListener('scroll', () => {
     showShadow.value = tableBody.value.scrollLeft > 0;
   });
+});
+
+onBeforeUnmount(() => {
+  columnWidthObserver?.disconnect();
+  columnWidthObserver = null;
 });
 
 const emits = defineEmits([
@@ -627,7 +669,34 @@ const {
   fixedColumnsInfos,
 } = useFixedColumn(
   headersForRender,
+  measuredColumnWidths,
+  cellHorizontalPadding,
 );
+
+const setupColumnWidthObserver = () => {
+  columnWidthObserver?.disconnect();
+  columnWidthObserver = null;
+  if (!fixedHeaders.value.length) {
+    if (measuredColumnWidths.value.length) measuredColumnWidths.value = [];
+    return;
+  }
+  const observeTarget = tableBody.value as HTMLElement | undefined;
+  if (observeTarget && typeof ResizeObserver !== 'undefined') {
+    columnWidthObserver = new ResizeObserver(() => {
+      measurePaintedColumnWidths();
+    });
+    columnWidthObserver.observe(observeTarget);
+  }
+  measurePaintedColumnWidths();
+};
+
+onMounted(() => {
+  nextTick(setupColumnWidthObserver);
+});
+
+watch(headersForRender, () => {
+  nextTick(setupColumnWidthObserver);
+});
 
 const {
   clickRow,
@@ -669,13 +738,27 @@ const getColStyle = (header: HeaderForRender): string | undefined => {
   return undefined;
 };
 
-const getFixedDistance = (column: string, type: 'td' | 'th' = 'th') => {
+const fixedTableMinWidthStyle = computed(() => {
+  if (!fixedHeaders.value.length) return undefined;
+  const padding = cellHorizontalPadding.value;
+  const minWidth = headersForRender.value.reduce((sum, header) => (
+    sum + resolveColumnPaintedWidth({
+      configuredWidth: header.width ?? 100,
+      horizontalPadding: padding,
+    })
+  ), 0);
+  return { minWidth: `${minWidth}px` };
+});
+
+const getFixedDistance = (column: string, type: 'td' | 'th' = 'th'): CSSProperties | undefined => {
   if (!fixedHeaders.value.length) return undefined;
   const columInfo = fixedColumnsInfos.value.find((info) => info.value === column);
-  if (columInfo) {
-    return `left: ${columInfo.distance}px;z-index: ${type === 'th' ? 3 : 1};position: sticky;`;
-  }
-  return undefined;
+  if (!columInfo) return undefined;
+  return {
+    left: `${columInfo.distance}px`,
+    position: 'sticky',
+    zIndex: type === 'th' ? FIXED_COLUMN_HEADER_Z_INDEX : FIXED_COLUMN_BODY_Z_INDEX,
+  };
 };
 
 watch(loading, (newVal, oldVal) => {

@@ -13,6 +13,7 @@
       :style="getFixedDistance(column, 'td')"
       :class="[{
         'shadow': column === lastFixedColumn,
+        'fixed-column': Boolean(getFixedDistance(column, 'td')),
         'can-expand': column === 'expand' && isRowExpandable(item),
       // eslint-disable-next-line max-len
       }, typeof bodyItemClassName === 'string' ? bodyItemClassName : bodyItemClassName(column, index + 1), `direction-${bodyTextDirection}`]"
@@ -78,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { useSlots, computed, type PropType } from 'vue';
+import { useSlots, computed, type PropType, type CSSProperties } from 'vue';
 import SingleSelectCheckBox from './SingleSelectCheckBox.vue';
 import LoadingLine from './LoadingLine.vue';
 import type { Item, BodyItemClassNameFunction, BodyRowClassNameFunction, TextDirection } from '../types/main';
@@ -165,7 +166,7 @@ const props = defineProps({
     required: true,
   },
   getFixedDistance: {
-    type: Function as PropType<(column: string, type?: 'td' | 'th') => string | undefined>,
+    type: Function as PropType<(column: string, type?: 'td' | 'th') => CSSProperties | undefined>,
     required: true,
   },
 });

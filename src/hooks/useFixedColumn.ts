@@ -1,5 +1,10 @@
 import { Ref, computed } from 'vue';
 import type { HeaderForRender } from '../types/internal';
+import {
+  DEFAULT_CELL_HORIZONTAL_PADDING_PX,
+  computeStickyDistances,
+  resolveColumnPaintedWidth,
+} from '../stickyColumns';
 
 type FixedColumnsInfo = {
   value: string,
@@ -10,6 +15,8 @@ type FixedColumnsInfo = {
 
 export default function useFixedColumn(
   headersForRender: Ref<HeaderForRender[]>,
+  measuredColumnWidths?: Ref<number[]>,
+  horizontalPadding?: Ref<number>,
 ) {
   const fixedHeaders = computed((): HeaderForRender[] => headersForRender.value.filter((header) => header.fixed));
 
@@ -19,18 +26,30 @@ export default function useFixedColumn(
   });
 
   const fixedColumnsInfos = computed((): FixedColumnsInfo[] => {
-    if (!fixedHeaders.value.length) return [];
-    const fixedHeadersWidthArr = fixedHeaders.value.map((header) => header.width ?? 100);
-    return fixedHeaders.value.map((header: HeaderForRender, index: number): FixedColumnsInfo => ({
-      value: header.value,
-      fixed: header.fixed ?? true,
-      width: header.width ?? 100,
-      distance: index === 0 ? 0 : fixedHeadersWidthArr.reduce((previous: number, current: number, i: number): number => {
-        let distance = previous;
-        if (i < index) distance += current;
-        return distance;
-      }),
+    const headers = headersForRender.value;
+    if (!headers.some((header) => header.fixed)) return [];
+
+    const padding = horizontalPadding?.value ?? DEFAULT_CELL_HORIZONTAL_PADDING_PX;
+    const measured = measuredColumnWidths?.value ?? [];
+    const canUseMeasured = measured.length === headers.length
+      && measured.every((width) => width > 0);
+
+    const paintedWidths = headers.map((header, index) => resolveColumnPaintedWidth({
+      measuredWidth: canUseMeasured ? measured[index] : null,
+      configuredWidth: header.width ?? 100,
+      horizontalPadding: padding,
     }));
+    const distances = computeStickyDistances(paintedWidths);
+
+    return headers.flatMap((header, index): FixedColumnsInfo[] => {
+      if (!header.fixed) return [];
+      return [{
+        value: header.value,
+        fixed: header.fixed ?? true,
+        width: paintedWidths[index],
+        distance: distances[index],
+      }];
+    });
   });
 
   return {
