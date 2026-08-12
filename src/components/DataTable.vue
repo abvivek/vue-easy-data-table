@@ -121,86 +121,71 @@
               headers: headersForRender
             }"
           />
-          <template
-            v-for="(item, index) in pageItems"
-            :key="resolveRowKey(item, index)"
+          <tr
+            v-if="isVirtualActive && virtualOffsetTop > 0"
+            class="vue3-easy-data-table__virtual-spacer"
+            aria-hidden="true"
           >
-            <tr
-              :class="[{'even-row': (index + 1) % 2 === 0},
-                       typeof bodyRowClassName === 'string' ? bodyRowClassName : bodyRowClassName(item, index + 1)]"
-              @click="($event) => {
-                clickRow(item, 'single', $event);
-                if (clickRowToExpand && isRowExpandable(item)) {
-                  updateExpandingItemIndexList(index + prevPageEndIndex, item, $event);
-                }
+            <td
+              :colspan="headersForRender.length"
+              :style="{
+                height: `${virtualOffsetTop}px`,
+                padding: 0,
+                border: 'none',
+                lineHeight: 0,
               }"
-              @dblclick="($event) => {clickRow(item, 'double', $event)}"
-              @contextmenu="($event) => {contextMenuRow(item, $event)}"
+            />
+          </tr>
+          <DataTableBodyRow
+            v-for="row in rowsForRender"
+            :key="resolveRowKey(row.item, row.index)"
+            :item="row.item"
+            :index="row.index"
+            :header-columns="headerColumns"
+            :headers-for-render-length="headersForRender.length"
+            :prev-page-end-index="prevPageEndIndex"
+            :last-fixed-column="lastFixedColumn"
+            :body-text-direction="bodyTextDirection"
+            :body-row-class-name="bodyRowClassName"
+            :body-expand-row-class-name="bodyExpandRowClassName"
+            :body-item-class-name="bodyItemClassName"
+            :if-has-expand-slot="ifHasExpandSlot"
+            :click-row-to-expand="clickRowToExpand"
+            :row-height="isVirtualActive ? virtualRowHeight ?? undefined : undefined"
+            :is-row-expandable="isRowExpandable"
+            :is-row-expanding="isRowExpanding"
+            :update-expanding-item-index-list="updateExpandingItemIndexList"
+            :toggle-select-item="toggleSelectItem"
+            :click-row="clickRow"
+            :context-menu-row="contextMenuRow"
+            :get-fixed-distance="getFixedDistance"
+          >
+            <template
+              v-for="(_, name) in slots"
+              :key="name"
+              #[name]="slotData"
             >
-              <td
-                v-for="(column, i) in headerColumns"
-                :key="i"
-                :style="getFixedDistance(column, 'td')"
-                :class="[{
-                  'shadow': column === lastFixedColumn,
-                  'can-expand': column === 'expand' && isRowExpandable(item),
-                // eslint-disable-next-line max-len
-                }, typeof bodyItemClassName === 'string' ? bodyItemClassName : bodyItemClassName(column, index + 1), `direction-${bodyTextDirection}`]"
-                @click="(column === 'expand' && isRowExpandable(item)) ? updateExpandingItemIndexList(index + prevPageEndIndex, item, $event) : null"
-              > 
-                <slot
-                  v-if="slots[`item-${column}`]"
-                  :name="`item-${column}`"
-                  v-bind="item"
-                />
-                <slot
-                  v-else-if="slots[`item-${column.toLowerCase()}`]"
-                  :name="`item-${column.toLowerCase()}`"
-                  v-bind="item"
-                />
-                <template v-else-if="column === 'expand'">
-                  <i
-                    v-if="isRowExpandable(item)"
-                    class="expand-icon"
-                    :class="{'expanding': isRowExpanding(prevPageEndIndex + index, item)}"
-                  />
-                </template>
-                <template v-else-if="column === 'checkbox'">
-                  <SingleSelectCheckBox
-                    :checked="item[column]"
-                    @change="toggleSelectItem(item)"
-                  />
-                </template>
-                <slot
-                  v-else-if="slots['item']"
-                  name="item"
-                  v-bind="{column, item}"
-                />
-                <template v-else>
-                  {{ generateColumnContent(column, item) }}
-                </template>
-              </td>
-            </tr>
-            <tr
-              v-if="ifHasExpandSlot && isRowExpanding(index + prevPageEndIndex, item)"
-              :class="[{'even-row': (index + 1) % 2 === 0},
-                       typeof bodyExpandRowClassName === 'string' ? bodyExpandRowClassName : bodyExpandRowClassName(item, index + 1)]"
-            >
-              <td
-                :colspan="headersForRender.length"
-                class="expand"
-              >
-                <LoadingLine
-                  v-if="item.expandLoading"
-                  class="expand-loading"
-                />
-                <slot
-                  name="expand"
-                  v-bind="item"
-                />
-              </td>
-            </tr>
-          </template>
+              <slot
+                :name="name"
+                v-bind="slotData || {}"
+              />
+            </template>
+          </DataTableBodyRow>
+          <tr
+            v-if="isVirtualActive && virtualOffsetBottom > 0"
+            class="vue3-easy-data-table__virtual-spacer"
+            aria-hidden="true"
+          >
+            <td
+              :colspan="headersForRender.length"
+              :style="{
+                height: `${virtualOffsetBottom}px`,
+                padding: 0,
+                border: 'none',
+                lineHeight: 0,
+              }"
+            />
+          </tr>
           <slot
             name="body-append"
             v-bind="{
@@ -298,16 +283,15 @@
 
 <script setup lang="ts">
 import {
-  useSlots, computed, toRefs, ref, watch, provide, onMounted, PropType,
+  useSlots, computed, toRefs, toRef, ref, watch, provide, onMounted, PropType,
 } from 'vue';
 
 import MultipleSelectCheckBox from './MultipleSelectCheckBox.vue';
-import SingleSelectCheckBox from './SingleSelectCheckBox.vue';
 import RowsSelector from './RowsSelector.vue';
 import Loading from './Loading.vue';
-import LoadingLine from './LoadingLine.vue';
 import ButtonsPagination from './ButtonsPagination.vue';
 import PaginationArrows from './PaginationArrows.vue';
+import DataTableBodyRow from './DataTableBodyRow.vue';
 
 import useClickRow from '../hooks/useClickRow';
 import useExpandableRow from '../hooks/useExpandableRow';
@@ -318,11 +302,12 @@ import usePagination from '../hooks/usePagination';
 import useRows from '../hooks/useRows';
 import useServerOptions from '../hooks/useServerOptions';
 import useTotalItems from '../hooks/useTotalItems';
+import useVirtualRows from '../hooks/useVirtualRows';
 
 import type { Header, Item } from '../types/main';
 import type { HeaderForRender } from '../types/internal';
 
-import { generateColumnContent, getItemIdentity } from '../utils';
+import { getItemIdentity } from '../utils';
 import propsWithDefault from '../propsWithDefault';
 
 const props = defineProps({
@@ -373,8 +358,13 @@ const {
   themeColor,
   rowsOfPageSeparatorMessage,
   showIndexSymbol,
-  preventContextMenuRow
+  preventContextMenuRow,
+  virtual,
+  virtualOverscan,
 } = toRefs(props);
+
+// Prefer toRef so optional virtual row height stays a defined Ref for hooks.
+const virtualRowHeight = toRef(props, 'virtualRowHeight');
 
 // style related computed variables
 const tableHeightPx = computed(() => (tableHeight.value ? `${tableHeight.value}px` : null));
@@ -558,6 +548,61 @@ const resolveRowKey = (item: Item, index: number): string | number => {
   }
   return index;
 };
+
+/**
+ * Virtualization is opt-in and falls back to full page render when unsafe:
+ * expand slot (variable height), body-prepend/append (unknown offset),
+ * or missing/invalid virtualRowHeight. Custom `#body` already replaces tbody.
+ */
+const ifHasBodyPrependSlot = computed(() => !!slots['body-prepend']);
+const ifHasBodyAppendSlot = computed(() => !!slots['body-append']);
+
+const virtualFallbackReason = computed((): string | null => {
+  if (!virtual.value) return null;
+  if (ifHasBodySlot.value) return 'body-slot';
+  if (ifHasExpandSlot.value) return 'expand-slot';
+  if (ifHasBodyPrependSlot.value || ifHasBodyAppendSlot.value) {
+    return 'body-prepend-or-append-slot';
+  }
+  if (virtualRowHeight.value == null || virtualRowHeight.value <= 0) {
+    return 'missing-virtual-row-height';
+  }
+  return null;
+});
+
+const isVirtualActive = computed(
+  () => virtual.value && virtualFallbackReason.value === null,
+);
+
+let virtualFallbackWarned = false;
+watch(virtualFallbackReason, (reason) => {
+  if (reason && reason !== 'body-slot' && !virtualFallbackWarned) {
+    virtualFallbackWarned = true;
+    console.warn(
+      `[vue-easy-data-table] virtualization disabled (${reason}). `
+      + 'Falling back to full page render. See MIGRATION.md.',
+    );
+  }
+}, { immediate: true });
+
+const {
+  virtualRows,
+  offsetTop: virtualOffsetTop,
+  offsetBottom: virtualOffsetBottom,
+} = useVirtualRows(
+  isVirtualActive,
+  pageItems,
+  virtualRowHeight,
+  virtualOverscan,
+  tableBody,
+  tableHeight,
+);
+
+/** Shared row list: windowed when virtual is active, else full `pageItems`. */
+const rowsForRender = computed(() => {
+  if (isVirtualActive.value) return virtualRows.value;
+  return pageItems.value.map((item, index) => ({ item, index }));
+});
 
 const {
   fixedHeaders,

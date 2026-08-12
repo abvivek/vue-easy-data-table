@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0-alpha.4
+
+Phase 3 — opt-in tbody virtualization (additive):
+
+- **`virtual`**, **`virtual-row-height`**, **`virtual-overscan`** props. Default `virtual=false` keeps the legacy full-page render path.
+- Windows over **`pageItems`** (current page), not the full unpaged dataset — pagination semantics unchanged.
+- Shared `DataTableBodyRow` for default and virtual paths (slots / checkbox / expand / fixed columns stay consistent).
+- **Safe auto-fallback** (full page render + console warning) when: `#expand` is used, `#body-prepend` / `#body-append` is used, or `virtual-row-height` is missing/invalid. Custom `#body` already replaces tbody (virtual N/A).
+- Recommend **`item-key`** + fixed row height when enabling virtual. See [MIGRATION.md](./MIGRATION.md).
+- **CI quality gate**: GitHub Actions runs `lint` / `typecheck` / `test` / `build` / `bench:ci` (smoke, no timing thresholds) on PRs and `main` (Node 20 + 22).
+
 ## 1.6.0-alpha.3
 
 Phase 2 — identity + performance foundation:

@@ -5,7 +5,7 @@
 ## Introduction
 **vue-easy-data-table** is an actively maintained fork/successor of [vue3-easy-data-table](https://github.com/HC200ok/vue3-easy-data-table) — a customizable and easy-to-use data table component for Vue.js 3.x.
 
-See [MIGRATION.md](./MIGRATION.md) for package rename notes. The public component API (props/slots/emits) remains compatible; Phase 2 adds an optional `item-key` for stable row identity on large datasets (see [docs/BENCHMARKS.md](./docs/BENCHMARKS.md)).
+See [MIGRATION.md](./MIGRATION.md) for package rename notes. The public component API (props/slots/emits) remains compatible; Phase 2 adds optional `item-key`, and Phase 3 adds opt-in tbody `virtual` / `virtual-row-height` (see [docs/BENCHMARKS.md](./docs/BENCHMARKS.md)).
 
 ## Website
 https://hc200ok.github.io/vue3-easy-data-table-doc/ (upstream docs; still applicable)
@@ -31,6 +31,7 @@ https://hc200ok.github.io/vue3-easy-data-table-doc/ (upstream docs; still applic
 16. [Style customization](https://hc200ok.github.io/vue3-easy-data-table-doc/features/style-customization.html) (new feature since version `1.3.11`)
 17. [Border cell](https://hc200ok.github.io/vue3-easy-data-table-doc/features/border-cell.html) (new feature since version `1.3.11`)
 18. [Class name customization](https://hc200ok.github.io/vue3-easy-data-table-doc/features/class-name-customization.html) (new feature since version `1.3.11`)
+19. **Virtual rows** (opt-in `virtual` + `virtual-row-height`, since `1.6.0-alpha.4`) — see [MIGRATION.md](./MIGRATION.md)
 
 ## Getting started
 ### 1. ES module
@@ -129,7 +130,7 @@ export default defineComponent({
 ## Todo
 1. Refactory.
 3. Make table header customizable 🎛️.
-4. Vitual table rows.
+4. ~~Vitual table rows.~~ (opt-in since `1.6.0-alpha.4`)
 5. Mobile responsive.
 
 ## Contribution
