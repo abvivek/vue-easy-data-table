@@ -3,7 +3,9 @@ import {
 } from 'vue';
 import type { Item, FilterOption } from '../types/main';
 import type { ClientSortOptions, EmitsEventName } from '../types/internal';
-import { getItemValue } from '../utils';
+import {
+  getItemValue, escapeRegExp, toSearchString, compareValues, itemsEqual,
+} from '../utils';
 
 export default function useTotalItems(
   clientSortOptions: Ref<ClientSortOptions | null>,
@@ -11,29 +13,31 @@ export default function useTotalItems(
   isServerSideMode: ComputedRef<boolean>,
   items: Ref<Item[]>,
   itemsSelected: Ref<Item[]>,
-  searchField: Ref<string>,
+  searchField: Ref<string | string[]>,
   searchValue: Ref<string>,
   serverItemsLength: Ref<number>,
   multiSort: Ref<boolean>,
   emits: (event: EmitsEventName, ...args: any[]) => void,
 ) {
   const generateSearchingTarget = (item: Item): string => {
-    if (typeof searchField.value === 'string' && searchField.value !== '') return getItemValue(searchField.value, item);
+    if (typeof searchField.value === 'string' && searchField.value !== '') {
+      return toSearchString(getItemValue(searchField.value, item));
+    }
     if (Array.isArray(searchField.value)) {
       let searchString = '';
       searchField.value.forEach((field) => {
-        searchString += getItemValue(field, item);
+        searchString += toSearchString(getItemValue(field, item));
       });
       return searchString;
     }
-    return Object.values(item).join(' ');
+    return Object.values(item).map((value) => toSearchString(value)).join(' ');
   };
 
   // items searching
   const itemsSearching = computed((): Item[] => {
     // searching feature is not available in server-side mode
     if (!isServerSideMode.value && searchValue.value !== '') {
-      const regex = new RegExp(searchValue.value, 'i');
+      const regex = new RegExp(escapeRegExp(searchValue.value), 'i');
       return items.value.filter((item) => regex.test(generateSearchingTarget(item)));
     }
     return items.value;
@@ -46,9 +50,9 @@ export default function useTotalItems(
         itemsFiltered = itemsFiltered.filter((item) => {
           const { field, comparison, criteria } = option;
           if (typeof comparison === 'function') {
-            return comparison(getItemValue(field, item), criteria as string);
+            return comparison(getItemValue(String(field), item), criteria as string);
           }
-          const itemValue = getItemValue(field, item);
+          const itemValue = getItemValue(String(field), item);
           switch (comparison) {
             case '=':
               return itemValue === criteria;
@@ -65,7 +69,7 @@ export default function useTotalItems(
             case 'between':
               return itemValue >= Math.min(...criteria) && itemValue <= Math.max(...criteria);
             case 'in':
-              return criteria.includes(itemValue);
+              return (criteria as Array<string | number>).includes(itemValue);
             default:
               return itemValue === criteria;
           }
@@ -95,8 +99,9 @@ export default function useTotalItems(
         }
       }
       if (isAllSame) {
-        if (getItemValue(sortBy as string, a) < getItemValue(sortBy as string, b)) return sortDesc ? 1 : -1;
-        if (getItemValue(sortBy as string, a) > getItemValue(sortBy as string, b)) return sortDesc ? -1 : 1;
+        const compared = compareValues(getItemValue(sortBy as string, a), getItemValue(sortBy as string, b));
+        if (compared < 0) return sortDesc ? 1 : -1;
+        if (compared > 0) return sortDesc ? -1 : 1;
         return 0;
       }
       return 0;
@@ -116,15 +121,15 @@ export default function useTotalItems(
       if (sortBy.length === 0) return itemsFilteringSorted;
       return recursionMuiltSort(sortBy, sortDesc, itemsFilteringSorted, sortBy.length - 1);
     }
-    // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+
     return itemsFilteringSorted.sort((a, b) => {
-      if (getItemValue(sortBy as string, a) < getItemValue(sortBy as string, b)) return sortDesc ? 1 : -1;
-      if (getItemValue(sortBy as string, a) > getItemValue(sortBy as string, b)) return sortDesc ? -1 : 1;
+      const compared = compareValues(getItemValue(sortBy as string, a), getItemValue(sortBy as string, b));
+      if (compared < 0) return sortDesc ? 1 : -1;
+      if (compared > 0) return sortDesc ? -1 : 1;
       return 0;
     });
   });
 
-  // eslint-disable-next-line max-len
   const totalItemsLength = computed((): number => (isServerSideMode.value ? serverItemsLength.value : totalItems.value.length));
 
   // multiple selecting
@@ -136,15 +141,35 @@ export default function useTotalItems(
   });
 
   const toggleSelectAll = (isChecked: boolean): void => {
+    // Server-side: only the current page is in `items`/`totalItems`.
+    // Merge/remove current page into existing selection so cross-page selection works.
+    if (isServerSideMode.value) {
+      if (isChecked) {
+        const merged = [...selectItemsComputed.value];
+        totalItems.value.forEach((item) => {
+          if (!merged.some((selected) => itemsEqual(selected, item))) {
+            merged.push(item);
+          }
+        });
+        selectItemsComputed.value = merged;
+        emits('selectAll');
+      } else {
+        selectItemsComputed.value = selectItemsComputed.value.filter(
+          (selected) => !totalItems.value.some((item) => itemsEqual(selected, item)),
+        );
+      }
+      return;
+    }
+
     selectItemsComputed.value = isChecked ? totalItems.value : [];
     if (isChecked) emits('selectAll');
   };
 
   const toggleSelectItem = (item: Item):void => {
     const isAlreadyChecked = item.checkbox;
-    // eslint-disable-next-line no-param-reassign
+
     delete item.checkbox;
-    // eslint-disable-next-line no-param-reassign
+
     delete item.index;
     if (!isAlreadyChecked) {
       const selectItemsArr: Item[] = selectItemsComputed.value;

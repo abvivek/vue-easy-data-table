@@ -27,6 +27,16 @@ export default {
     type: String,
     default: 'No Available Data',
   },
+  /**
+   * Control which rows show an expand affordance.
+   * `true` (default): all rows expandable when `#expand` is provided.
+   * `false`: never show/expand.
+   * function: per-row predicate (receives the row item).
+   */
+  expandable: {
+    type: [Boolean, Function] as PropType<boolean | ((item: Item) => boolean)>,
+    default: true,
+  },
   expandColumnWidth: {
     type: Number,
     default: 36,
@@ -96,7 +106,7 @@ export default {
     default: 'rows per page:',
   },
   searchField: {
-    type: [String, Array as PropType<String[]>],
+    type: [String, Array] as PropType<string | string[]>,
     default: '',
   },
   searchValue: {
@@ -116,11 +126,11 @@ export default {
     default: false,
   },
   sortBy: {
-    type: [String, Array as PropType<String[]>],
+    type: [String, Array] as PropType<string | string[]>,
     default: '',
   },
   sortType: {
-    type: [String as PropType<SortType>, Array as PropType<SortType[]>],
+    type: [String, Array] as PropType<SortType | SortType[]>,
     default: 'asc',
   },
   multiSort: {

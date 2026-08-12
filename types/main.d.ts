@@ -1,3 +1,5 @@
+import type { DefineComponent } from 'vue'
+
 export type SortType = 'asc' | 'desc'
 
 export type FilterComparison = '=' | '!=' | '>' | '>=' | '<' | '<=' | 'between'| 'in';
@@ -56,3 +58,8 @@ export type BodyRowClassNameFunction = (item: Item, rowNumber: number) => string
 export type BodyItemClassNameFunction = (column: string, rowNumber: number) => string
 
 export type TextDirection = 'center' | 'left' | 'right'
+
+declare const Vue3EasyDataTable: DefineComponent<Record<string, unknown>, Record<string, unknown>, any>
+
+export default Vue3EasyDataTable
+export { Vue3EasyDataTable }

@@ -34,7 +34,7 @@ export default function useHeaders(
   });
   const unFixedHeaders = computed(() => headers.value.filter((header) => !header.fixed));
 
-  // eslint-disable-next-line max-len
+   
   const generateClientSortOptions = (sortByValue: string | string[], sortTypeValue: SortType | SortType[]): ClientSortOptions | null => {
     // multi sort
     if (Array.isArray(sortByValue) && Array.isArray(sortTypeValue)) {
@@ -81,7 +81,7 @@ export default function useHeaders(
 
       // client mode
       // multi sort
-      // eslint-disable-next-line max-len
+       
       if (clientSortOptions.value && Array.isArray(clientSortOptions.value.sortBy) && Array.isArray(clientSortOptions.value.sortDesc)
       && clientSortOptions.value.sortBy.includes(headerSorting.value)) {
         const index = clientSortOptions.value.sortBy.indexOf(headerSorting.value);

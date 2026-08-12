@@ -121,7 +121,7 @@ import {
 // import type { UseRowsPerPageReturn } from 'use-vue3-easy-data-table';
 import type {
   Header, Item, FilterOption, ClickRowArgument, UpdateSortArgument, HeaderItemClassNameFunction, BodyItemClassNameFunction, BodyRowClassNameFunction,
-  TextDirection,
+  TextDirection, SortType,
 } from '../types/main';
 import DataTable from '../components/DataTable.vue';
 import { mockClientNestedItems, mockClientItems, mockDuplicateClientNestedItems, headersMocked } from '../mock';

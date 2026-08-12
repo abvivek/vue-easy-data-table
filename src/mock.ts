@@ -1,4 +1,4 @@
-/* eslint-disable max-len */
+ 
 import type { Item, ServerOptions, Header } from './types/main';
 
 export const headersMocked: Header[] = [
@@ -78,7 +78,7 @@ export const mockDuplicateClientNestedItems = (itemsNumber = 100): Item[] => {
 };
 
 export const mockItemIntroduction = async (name: string): Promise<string> => {
-  // eslint-disable-next-line no-promise-executor-return
+   
   await new Promise((s) => setTimeout(s, 2000));
   const briefs: Record<string, string> = {
     'Stephen Curry': 'Wardell Stephen Curry II is an American professional basketball player for the Golden State Warriors of the National Basketball Association (NBA).',
@@ -100,14 +100,14 @@ export const mockServerItems = async (
     page, rowsPerPage, sortBy, sortType,
   } = serverOptions;
   const serverTotalItems = mockClientItems(serverItemsLength);
-  if (sortBy && sortType) {
+  if (sortBy && sortType && !Array.isArray(sortBy) && !Array.isArray(sortType)) {
     serverTotalItems.sort((a, b) => {
       if (a[sortBy] < b[sortBy]) return sortType === 'desc' ? 1 : -1;
       if (a[sortBy] > b[sortBy]) return sortType === 'desc' ? -1 : 1;
       return 0;
     });
   }
-  // eslint-disable-next-line no-promise-executor-return
+   
   await new Promise((s) => setTimeout(s, 2000));
   return {
     serverCurrentPageItems: serverTotalItems.slice(
