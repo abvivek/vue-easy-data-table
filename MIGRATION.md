@@ -75,6 +75,40 @@ Optional prop for stable row identity (recommended for large datasets):
 
 No breaking change when omitted. Prefer `item-key` at 10k+ rows so select-all stays usable (keyed path uses `Set` lookups).
 
+### Additive (Phase 3) — tbody virtualization
+
+Opt-in windowing over the **current page** (`pageItems`). Defaults preserve legacy DOM/behavior.
+
+```vue
+<EasyDataTable
+  :headers="headers"
+  :items="items"
+  item-key="id"
+  :rows-per-page="500"
+  :table-height="480"
+  virtual
+  :virtual-row-height="36"
+  :virtual-overscan="5"
+/>
+```
+
+| Prop | Default | Notes |
+| --- | --- | --- |
+| `virtual` | `false` | Enable windowing |
+| `virtual-row-height` | `null` | Fixed row height in px (**required** for virtual) |
+| `virtual-overscan` | `5` | Extra rows above/below the viewport |
+
+**Auto-disable (safe fallback to full page render):**
+
+| Condition | Behavior |
+| --- | --- |
+| `#expand` slot present | Virtual off (variable-height expand unsupported in v1) |
+| `#body-prepend` / `#body-append` | Virtual off (unknown scroll offset) |
+| Missing / non-positive `virtual-row-height` | Virtual off |
+| Custom `#body` slot | Virtual N/A (tbody already replaced) |
+
+Fixed columns / sticky cells remain supported on the virtual path (same cell sticky styles). Prefer `item-key` + a real `table-height` so the scroll container has a bounded viewport.
+
 ### Pagination behavior (client mode)
 
 | Trigger | Behavior |

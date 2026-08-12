@@ -217,5 +217,30 @@ export default {
   preventContextMenuRow: {
     type: Boolean,
     default: true
-  }
+  },
+  /**
+   * Opt-in tbody row virtualization over `pageItems`.
+   * Default `false` keeps the legacy full-page render path.
+   * Auto-disabled when expand / body-prepend / body-append slots are used,
+   * or when `virtualRowHeight` is missing/invalid — see MIGRATION.md.
+   */
+  virtual: {
+    type: Boolean,
+    default: false,
+  },
+  /**
+   * Fixed row height in px (required for virtualization).
+   * Strongly recommended whenever `virtual` is true.
+   */
+  virtualRowHeight: {
+    type: Number,
+    default: undefined,
+  },
+  /**
+   * Extra rows rendered above/below the visible window when virtualizing.
+   */
+  virtualOverscan: {
+    type: Number,
+    default: 5,
+  },
 };

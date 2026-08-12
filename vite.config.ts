@@ -37,5 +37,7 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     include: ['test/**/*.{test,spec}.{js,ts}'],
+    // Server-side mock fixture can exceed the 5s default on slower runners.
+    testTimeout: 15_000,
   },
 });

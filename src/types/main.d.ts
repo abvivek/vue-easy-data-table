@@ -59,3 +59,9 @@ export type TextDirection = 'center' | 'left' | 'right'
 
 /** Optional field path for stable row identity (`"id"` or nested `"meta.uuid"`). */
 export type ItemKey = string
+
+/**
+ * Opt-in tbody virtualization over the current page (`pageItems`).
+ * Requires a positive `virtualRowHeight`. See MIGRATION.md for fallback rules.
+ */
+export type Virtual = boolean

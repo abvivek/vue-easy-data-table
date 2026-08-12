@@ -66,6 +66,14 @@ export type TextDirection = 'center' | 'left' | 'right'
  */
 export type ItemKey = string
 
+/**
+ * Opt-in tbody virtualization (`virtual` prop) over the current page (`pageItems`).
+ * Requires a positive `virtual-row-height`. Auto-disabled with expand /
+ * body-prepend / body-append slots, or when row height is missing/invalid.
+ * Prefer `item-key` + fixed row height. See MIGRATION.md.
+ */
+export type Virtual = boolean
+
 declare const Vue3EasyDataTable: DefineComponent<Record<string, unknown>, Record<string, unknown>, any>
 
 export default Vue3EasyDataTable
