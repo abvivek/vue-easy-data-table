@@ -23,7 +23,11 @@ export default function useServerOptions(
       return null;
     },
     set: (value) => {
-      emits('update:serverOptions', value);
+      // Preserve unknown/custom keys from the previous serverOptions (#388).
+      emits('update:serverOptions', {
+        ...(serverOptions.value ?? {}),
+        ...value,
+      });
     },
   });
 
@@ -50,6 +54,8 @@ export default function useServerOptions(
     if (serverOptionsComputed.value) {
       if (multiSort.value && Array.isArray(serverOptionsComputed.value.sortBy)
       && Array.isArray(serverOptionsComputed.value.sortType)) {
+        // Multi-sort mutates the parent's sort arrays in place (legacy behavior).
+        // Custom serverOptions fields are already preserved on the parent object.
         const index = serverOptionsComputed.value.sortBy.findIndex((val: string) => val === newSortBy);
         if (index === -1 && newSortType !== null) {
           serverOptionsComputed.value.sortBy.push(newSortBy);

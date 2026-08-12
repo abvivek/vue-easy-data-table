@@ -1,7 +1,7 @@
 import {
   Ref, computed, ComputedRef, watch,
 } from 'vue';
-import type { Item, FilterOption } from '../types/main';
+import type { Item, FilterOption, ServerSelectAll } from '../types/main';
 import type { ClientSortOptions, EmitsEventName } from '../types/internal';
 import {
   getItemValue, escapeRegExp, toSearchString, compareValues,
@@ -19,6 +19,7 @@ export default function useTotalItems(
   serverItemsLength: Ref<number>,
   multiSort: Ref<boolean>,
   itemKey: Ref<string>,
+  serverSelectAll: Ref<ServerSelectAll>,
   emits: (event: EmitsEventName, ...args: any[]) => void,
 ) {
   const generateSearchingTarget = (item: Item): string => {
@@ -148,8 +149,20 @@ export default function useTotalItems(
     const key = itemKey.value;
 
     // Server-side: only the current page is in `items`/`totalItems`.
-    // Merge/remove current page into existing selection so cross-page selection works.
     if (isServerSideMode.value) {
+      // `all`: signal full-result selection via `selectAll`. Checkbox UI uses the
+      // current page only (remote rows are not loaded). Uncheck clears everything.
+      if (serverSelectAll.value === 'all') {
+        if (isChecked) {
+          selectItemsComputed.value = [...totalItems.value];
+          emits('selectAll');
+        } else {
+          selectItemsComputed.value = [];
+        }
+        return;
+      }
+
+      // `page` (default): merge/remove current page so cross-page selection works.
       if (isChecked) {
         if (key) {
           const selectedKeys = buildIdentitySet(selectItemsComputed.value, key);

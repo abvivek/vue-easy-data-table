@@ -117,4 +117,75 @@ Fixed columns / sticky cells remain supported on the virtual path (same cell sti
 | `items` replaced and current page exceeds new max | **Clamp** to last valid page (does not force page 1 if still in range) |
 | `currentPage` / `v-model:current-page` prop change | Sync internal page |
 
-Server mode continues to own page via `v-model:server-options` (unchanged).
+Server mode continues to own page via `v-model:server-options`. Footer/`currentPaginationNumber` syncs when `serverOptions.page` updates (loading edge still works).
+
+### Additive (Phase 4) — server-side DX
+
+#### Recommended fetch loop
+
+Watch `serverOptions` (deep), set `loading`, fetch page data, then assign `items` / `serverItemsLength` and clear `loading`. Themes: upstream [#307](https://github.com/HC200ok/vue3-easy-data-table/issues/307), [#165](https://github.com/HC200ok/vue3-easy-data-table/issues/165).
+
+```vue
+<template>
+  <EasyDataTable
+    v-model:server-options="serverOptions"
+    :server-items-length="serverItemsLength"
+    :loading="loading"
+    :headers="headers"
+    :items="items"
+  />
+</template>
+
+<script setup>
+import { ref, watch } from 'vue';
+
+const items = ref([]);
+const loading = ref(false);
+const serverItemsLength = ref(0);
+const serverOptions = ref({
+  page: 1,
+  rowsPerPage: 25,
+  sortBy: 'name',
+  sortType: 'asc',
+  // Custom fields are preserved on pagination/sort emits (#388):
+  groupId: 42,
+});
+
+async function loadFromServer() {
+  loading.value = true;
+  try {
+    const res = await fetchPage(serverOptions.value); // your API
+    items.value = res.rows;
+    serverItemsLength.value = res.total;
+  } finally {
+    loading.value = false;
+  }
+}
+
+loadFromServer();
+watch(serverOptions, () => { loadFromServer(); }, { deep: true });
+</script>
+```
+
+#### Custom `serverOptions` fields (#388)
+
+Unknown keys on `serverOptions` are **round-tripped** on `update:serverOptions` (pagination, rows-per-page, single-field sort). You can keep filters/group IDs on the same object.
+
+#### `server-select-all`
+
+| Value | Behavior |
+| --- | --- |
+| `'page'` (**default**) | Header select-all **merges/removes the current page** into `itemsSelected` (Phase 1). `@select-all` still fires on check. |
+| `'all'` | Header select-all **replaces** selection with the current page and emits `@select-all` so the parent can treat it as “entire server result set”. Uncheck **clears** the whole selection. Remote rows are not loaded into `itemsSelected`. |
+
+```vue
+<EasyDataTable
+  v-model:server-options="serverOptions"
+  v-model:items-selected="itemsSelected"
+  server-select-all="all"
+  @select-all="onSelectAllServerResult"
+  ...
+/>
+```
+
+Omit the prop (or use `'page'`) for existing cross-page merge behavior.

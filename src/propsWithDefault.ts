@@ -1,6 +1,6 @@
 import { PropType } from 'vue';
 import type {
-  SortType, Item, ServerOptions, FilterOption,
+  SortType, Item, ServerOptions, ServerSelectAll, FilterOption,
   HeaderItemClassNameFunction, BodyItemClassNameFunction, BodyRowClassNameFunction,
   TextDirection,
 } from './types/main';
@@ -125,6 +125,15 @@ export default {
   serverOptions: {
     type: Object as PropType<ServerOptions> | null,
     default: null,
+  },
+  /**
+   * Server-mode header select-all scope.
+   * - `page` (default): merge/remove only the current page (Phase 1 behavior).
+   * - `all`: emit `selectAll` for full-result handling; replace/clear selection.
+   */
+  serverSelectAll: {
+    type: String as PropType<ServerSelectAll>,
+    default: 'page',
   },
   serverItemsLength: {
     type: Number,

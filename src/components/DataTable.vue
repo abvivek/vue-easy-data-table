@@ -350,6 +350,7 @@ const {
   searchValue,
   serverItemsLength,
   serverOptions,
+  serverSelectAll,
   showIndex,
   sortBy,
   sortType,
@@ -486,6 +487,7 @@ const {
   serverItemsLength,
   multiSort,
   itemKey,
+  serverSelectAll,
   emits,
 );
 
@@ -644,7 +646,8 @@ const getFixedDistance = (column: string, type: 'td' | 'th' = 'th') => {
 
 watch(loading, (newVal, oldVal) => {
   if (serverOptionsComputed.value) {
-    // in server-side mode, turn to next page when api request finished.
+    // Belt-and-suspenders: also sync page when the fetch finishes.
+    // Primary sync is the serverOptions.page watch in usePagination.
     if (newVal === false && oldVal === true) {
       updateCurrentPaginationNumber(serverOptionsComputed.value.page);
       clearExpandingItemIndexList();

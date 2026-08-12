@@ -5,7 +5,7 @@
 ## Introduction
 **vue-easy-data-table** is an actively maintained fork/successor of [vue3-easy-data-table](https://github.com/HC200ok/vue3-easy-data-table) — a customizable and easy-to-use data table component for Vue.js 3.x.
 
-See [MIGRATION.md](./MIGRATION.md) for package rename notes. The public component API (props/slots/emits) remains compatible; Phase 2 adds optional `item-key`, and Phase 3 adds opt-in tbody `virtual` / `virtual-row-height` (see [docs/BENCHMARKS.md](./docs/BENCHMARKS.md)).
+See [MIGRATION.md](./MIGRATION.md) for package rename notes. The public component API (props/slots/emits) remains compatible; Phase 2 adds optional `item-key`, Phase 3 adds opt-in tbody `virtual` / `virtual-row-height`, and Phase 4 improves server-side page sync, custom `serverOptions` fields, and `server-select-all` (see [docs/BENCHMARKS.md](./docs/BENCHMARKS.md)).
 
 ## Website
 https://hc200ok.github.io/vue3-easy-data-table-doc/ (upstream docs; still applicable)
@@ -19,7 +19,7 @@ https://hc200ok.github.io/vue3-easy-data-table-doc/ (upstream docs; still applic
 4. [Pagination slot](https://hc200ok.github.io/vue3-easy-data-table-doc/features/pagination-slot.html)
 5. [Single field sorting](https://hc200ok.github.io/vue3-easy-data-table-doc/features/single-field-sorting.html)
 6. [Searching](https://hc200ok.github.io/vue3-easy-data-table-doc/features/searching.html)
-7. [Server side paginate and sort](https://hc200ok.github.io/vue3-easy-data-table-doc/features/server-side-paginate-and-sort.html)
+7. [Server side paginate and sort](https://hc200ok.github.io/vue3-easy-data-table-doc/features/server-side-paginate-and-sort.html) — fork improvements (page sync, custom `serverOptions` fields, `server-select-all`) in [MIGRATION.md](./MIGRATION.md)
 8. [Loading slot](https://hc200ok.github.io/vue3-easy-data-table-doc/features/loading-slot.html)
 9. [Footer customization](https://hc200ok.github.io/vue3-easy-data-table-doc/features/footer-customization.html)
 10. [Filtering](https://hc200ok.github.io/vue3-easy-data-table-doc/features/filtering.html) (new feature since version `1.2.3`)

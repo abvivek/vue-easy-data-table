@@ -125,11 +125,10 @@ describe('regression server: pagination', () => {
   });
 
   /**
-   * Quirk lock-in: updating serverOptions.page without a loading false edge
-   * does not advance the footer index (currentPaginationNumber stays stale).
-   * Visible `items` still replace immediately.
+   * Phase 4: serverOptions.page updates sync the footer index immediately
+   * (no longer requires a loading true→false edge).
    */
-  it('server: without loading cycle, items update but footer page index stays stale', async () => {
+  it('server: updating serverOptions.page syncs footer without loading cycle', async () => {
     const wrapper = mount(DataTable, {
       props: {
         items: page1Items(),
@@ -146,8 +145,8 @@ describe('regression server: pagination', () => {
     });
     await nextTick();
     expect(firstName(wrapper)).toBe('f');
-    expect(footerIndexText(wrapper)).toBe('1–5 of 10');
-    expect(wrapper.vm.currentPaginationNumber).toBe(1);
+    expect(footerIndexText(wrapper)).toBe('6–10 of 10');
+    expect(wrapper.vm.currentPaginationNumber).toBe(2);
   });
 });
 
