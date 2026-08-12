@@ -59,6 +59,13 @@ export type BodyItemClassNameFunction = (column: string, rowNumber: number) => s
 
 export type TextDirection = 'center' | 'left' | 'right'
 
+/**
+ * Optional prop: field path for stable row identity (e.g. `"id"` or `"meta.uuid"`).
+ * When set, select/expand identity and row keys use this value instead of
+ * `JSON.stringify` / index. Recommended for large datasets.
+ */
+export type ItemKey = string
+
 declare const Vue3EasyDataTable: DefineComponent<Record<string, unknown>, Record<string, unknown>, any>
 
 export default Vue3EasyDataTable

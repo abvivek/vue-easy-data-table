@@ -3,7 +3,9 @@ import {
 } from 'vue';
 import type { Item } from '../types/main';
 import type { MultipleSelectStatus } from '../types/internal';
-import { itemsEqual } from '../utils';
+import {
+  itemsMatch, getItemIdentity, buildIdentitySet, stripEphemeralFields,
+} from '../utils';
 
 export default function usePageItems(
   currentPaginationNumber: Ref<number>,
@@ -15,6 +17,7 @@ export default function usePageItems(
   showIndex: Ref<boolean>,
   totalItems: ComputedRef<Item[]>,
   totalItemsLength: ComputedRef<number>,
+  itemKey: Ref<string>,
 ) {
   const currentPageFirstIndex = computed((): number => (currentPaginationNumber.value - 1)
     * rowsPerPageRef.value + 1);
@@ -43,10 +46,16 @@ export default function usePageItems(
   });
 
   const isItemSelected = (item: Item): boolean => {
-    const itemDeepCloned = { ...item };
-    delete itemDeepCloned.index;
-    delete itemDeepCloned.checkbox;
-    return selectItemsComputed.value.some((selectItem) => itemsEqual(selectItem, itemDeepCloned));
+    const key = itemKey.value;
+    if (key) {
+      const id = getItemIdentity(item, key);
+      if (id === undefined) return false;
+      return selectItemsComputed.value.some(
+        (selectItem) => getItemIdentity(selectItem, key) === id,
+      );
+    }
+    const itemDeepCloned = stripEphemeralFields(item);
+    return selectItemsComputed.value.some((selectItem) => itemsMatch(selectItem, itemDeepCloned));
   };
 
   const multipleSelectStatus = computed((): MultipleSelectStatus => {
@@ -55,6 +64,19 @@ export default function usePageItems(
 
     if (selectItemsComputed.value.length === 0 || targetItems.length === 0) {
       return 'noneSelected';
+    }
+
+    const key = itemKey.value;
+    if (key) {
+      const selectedKeys = buildIdentitySet(selectItemsComputed.value, key);
+      let selectedCount = 0;
+      for (let i = 0; i < targetItems.length; i += 1) {
+        const id = getItemIdentity(targetItems[i], key);
+        if (id !== undefined && selectedKeys.has(id)) selectedCount += 1;
+      }
+      if (selectedCount === 0) return 'noneSelected';
+      if (selectedCount === targetItems.length) return 'allSelected';
+      return 'partSelected';
     }
 
     const selectedCount = targetItems.filter((item) => isItemSelected(item)).length;
@@ -72,12 +94,22 @@ export default function usePageItems(
     } if (multipleSelectStatus.value === 'noneSelected') {
       return itemsWithIndex.value.map((item) => ({ checkbox: false, ...item }));
     }
+
+    const key = itemKey.value;
+    if (key) {
+      const selectedKeys = buildIdentitySet(selectItemsComputed.value, key);
+      return itemsWithIndex.value.map((item) => {
+        const id = getItemIdentity(item, key);
+        const isSelected = id !== undefined && selectedKeys.has(id);
+        return { checkbox: isSelected, ...item };
+      });
+    }
+
     return itemsWithIndex.value.map((item) => {
-      const isSelected = selectItemsComputed.value.findIndex((selectItem) => {
-        const itemDeepCloned = { ...item };
-        delete itemDeepCloned.index;
-        return JSON.stringify(selectItem) === JSON.stringify(itemDeepCloned);
-      }) !== -1;
+      const itemDeepCloned = stripEphemeralFields(item);
+      const isSelected = selectItemsComputed.value.some(
+        (selectItem) => itemsMatch(selectItem, itemDeepCloned),
+      );
       return { checkbox: isSelected, ...item };
     });
   });

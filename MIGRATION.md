@@ -55,6 +55,26 @@ Props, slots, emits, and CSS class names remain compatible with upstream `vue3-e
 - Server-side header “select all” merges/removes the **current page** into `itemsSelected` (does not wipe prior cross-page selection). The existing `selectAll` event is still emitted when checking the header box.
 - `expandable` prop (`boolean | (item) => boolean`, default `true`) gates per-row expand icon and expand clicks when using `#expand` (upstream #239).
 
+### Additive (Phase 2) — `item-key`
+
+Optional prop for stable row identity (recommended for large datasets):
+
+```vue
+<EasyDataTable
+  :headers="headers"
+  :items="items"
+  item-key="id"
+  v-model:items-selected="itemsSelected"
+/>
+```
+
+| `item-key` | Select / expand identity | Row `v-for` key |
+| --- | --- | --- |
+| **set** (e.g. `"id"` or `"meta.uuid"`) | Key value via field path | Stable key |
+| **omitted** (default) | Legacy `JSON.stringify` | Page-local index |
+
+No breaking change when omitted. Prefer `item-key` at 10k+ rows so select-all stays usable (keyed path uses `Set` lookups).
+
 ### Pagination behavior (client mode)
 
 | Trigger | Behavior |

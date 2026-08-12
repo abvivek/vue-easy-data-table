@@ -123,7 +123,7 @@
           />
           <template
             v-for="(item, index) in pageItems"
-            :key="index"
+            :key="resolveRowKey(item, index)"
           >
             <tr
               :class="[{'even-row': (index + 1) % 2 === 0},
@@ -162,7 +162,7 @@
                   <i
                     v-if="isRowExpandable(item)"
                     class="expand-icon"
-                    :class="{'expanding': expandingItemIndexList.includes(prevPageEndIndex + index)}"
+                    :class="{'expanding': isRowExpanding(prevPageEndIndex + index, item)}"
                   />
                 </template>
                 <template v-else-if="column === 'checkbox'">
@@ -182,7 +182,7 @@
               </td>
             </tr>
             <tr
-              v-if="ifHasExpandSlot && expandingItemIndexList.includes(index + prevPageEndIndex)"
+              v-if="ifHasExpandSlot && isRowExpanding(index + prevPageEndIndex, item)"
               :class="[{'even-row': (index + 1) % 2 === 0},
                        typeof bodyExpandRowClassName === 'string' ? bodyExpandRowClassName : bodyExpandRowClassName(item, index + 1)]"
             >
@@ -322,7 +322,7 @@ import useTotalItems from '../hooks/useTotalItems';
 import type { Header, Item } from '../types/main';
 import type { HeaderForRender } from '../types/internal';
 
-import { generateColumnContent } from '../utils';
+import { generateColumnContent, getItemIdentity } from '../utils';
 import propsWithDefault from '../propsWithDefault';
 
 const props = defineProps({
@@ -353,6 +353,7 @@ const {
   headers,
   headerTextDirection,
   indexColumnWidth,
+  itemKey,
   items,
   itemsSelected,
   loading,
@@ -494,6 +495,7 @@ const {
   searchValue,
   serverItemsLength,
   multiSort,
+  itemKey,
   emits,
 );
 
@@ -531,6 +533,7 @@ const {
   showIndex,
   totalItems,
   totalItemsLength,
+  itemKey,
 );
 
 const prevPageEndIndex = computed(() => {
@@ -539,12 +542,22 @@ const prevPageEndIndex = computed(() => {
 });
 
 const {
-  expandingItemIndexList,
+  isRowExpanding,
   updateExpandingItemIndexList,
   clearExpandingItemIndexList,
 } = useExpandableRow(
+  itemKey,
   emits,
 );
+
+/** Stable `v-for` key when `item-key` is set; otherwise page-local index (legacy). */
+const resolveRowKey = (item: Item, index: number): string | number => {
+  if (itemKey.value) {
+    const id = getItemIdentity(item, itemKey.value);
+    if (id !== undefined) return id;
+  }
+  return index;
+};
 
 const {
   fixedHeaders,

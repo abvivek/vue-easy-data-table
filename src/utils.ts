@@ -83,3 +83,50 @@ export function compareValues(a: unknown, b: unknown): number {
 export function itemsEqual(a: Item, b: Item): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
+
+/** Ephemeral fields attached to page rows — strip before stringify identity. */
+const EPHEMERAL_ITEM_FIELDS = ['checkbox', 'index', 'expandLoading'] as const;
+
+export function stripEphemeralFields(item: Item): Item {
+  const cloned = { ...item };
+  EPHEMERAL_ITEM_FIELDS.forEach((field) => {
+    delete cloned[field];
+  });
+  return cloned;
+}
+
+/**
+ * Stable row identity when `itemKey` is set (field path, supports nested `a.b`).
+ * Returns `undefined` when the key path is empty/unset.
+ */
+export function getItemIdentity(item: Item, itemKey?: string | null): string | number | undefined {
+  if (!itemKey) return undefined;
+  const value = getItemValue(itemKey, item);
+  if (value === '' || value == null) return undefined;
+  if (typeof value === 'string' || typeof value === 'number') return value;
+  return String(value);
+}
+
+/**
+ * Compare two items for select/expand identity.
+ * With `itemKey`: compare key values. Without: legacy `JSON.stringify` equality.
+ */
+export function itemsMatch(a: Item, b: Item, itemKey?: string | null): boolean {
+  if (itemKey) {
+    const aId = getItemIdentity(a, itemKey);
+    const bId = getItemIdentity(b, itemKey);
+    if (aId === undefined || bId === undefined) return false;
+    return aId === bId;
+  }
+  return itemsEqual(stripEphemeralFields(a), stripEphemeralFields(b));
+}
+
+/** Build a Set of identities for O(1) membership checks when `itemKey` is set. */
+export function buildIdentitySet(items: Item[], itemKey: string): Set<string | number> {
+  const set = new Set<string | number>();
+  items.forEach((item) => {
+    const id = getItemIdentity(item, itemKey);
+    if (id !== undefined) set.add(id);
+  });
+  return set;
+}

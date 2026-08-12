@@ -56,3 +56,6 @@ export type BodyRowClassNameFunction = (item: Item, rowNumber: number) => string
 export type BodyItemClassNameFunction = (column: string, rowNumber: number) => string
 
 export type TextDirection = 'center' | 'left' | 'right'
+
+/** Optional field path for stable row identity (`"id"` or nested `"meta.uuid"`). */
+export type ItemKey = string
