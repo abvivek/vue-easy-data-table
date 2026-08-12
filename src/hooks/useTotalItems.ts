@@ -11,7 +11,7 @@ export default function useTotalItems(
   isServerSideMode: ComputedRef<boolean>,
   items: Ref<Item[]>,
   itemsSelected: Ref<Item[]>,
-  searchField: Ref<string>,
+  searchField: Ref<string | string[]>,
   searchValue: Ref<string>,
   serverItemsLength: Ref<number>,
   multiSort: Ref<boolean>,
@@ -46,9 +46,9 @@ export default function useTotalItems(
         itemsFiltered = itemsFiltered.filter((item) => {
           const { field, comparison, criteria } = option;
           if (typeof comparison === 'function') {
-            return comparison(getItemValue(field, item), criteria as string);
+            return comparison(getItemValue(String(field), item), criteria as string);
           }
-          const itemValue = getItemValue(field, item);
+          const itemValue = getItemValue(String(field), item);
           switch (comparison) {
             case '=':
               return itemValue === criteria;
@@ -65,7 +65,7 @@ export default function useTotalItems(
             case 'between':
               return itemValue >= Math.min(...criteria) && itemValue <= Math.max(...criteria);
             case 'in':
-              return criteria.includes(itemValue);
+              return (criteria as Array<string | number>).includes(itemValue);
             default:
               return itemValue === criteria;
           }
@@ -116,7 +116,7 @@ export default function useTotalItems(
       if (sortBy.length === 0) return itemsFilteringSorted;
       return recursionMuiltSort(sortBy, sortDesc, itemsFilteringSorted, sortBy.length - 1);
     }
-    // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+     
     return itemsFilteringSorted.sort((a, b) => {
       if (getItemValue(sortBy as string, a) < getItemValue(sortBy as string, b)) return sortDesc ? 1 : -1;
       if (getItemValue(sortBy as string, a) > getItemValue(sortBy as string, b)) return sortDesc ? -1 : 1;
@@ -124,7 +124,7 @@ export default function useTotalItems(
     });
   });
 
-  // eslint-disable-next-line max-len
+   
   const totalItemsLength = computed((): number => (isServerSideMode.value ? serverItemsLength.value : totalItems.value.length));
 
   // multiple selecting
@@ -142,9 +142,9 @@ export default function useTotalItems(
 
   const toggleSelectItem = (item: Item):void => {
     const isAlreadyChecked = item.checkbox;
-    // eslint-disable-next-line no-param-reassign
+     
     delete item.checkbox;
-    // eslint-disable-next-line no-param-reassign
+     
     delete item.index;
     if (!isAlreadyChecked) {
       const selectItemsArr: Item[] = selectItemsComputed.value;

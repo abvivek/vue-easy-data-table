@@ -319,7 +319,6 @@ import useTotalItems from '../hooks/useTotalItems';
 import type { Header, Item } from '../types/main';
 import type { HeaderForRender } from '../types/internal';
 
-// eslint-disable-next-line import/extensions
 import { generateColumnContent } from '../utils';
 import propsWithDefault from '../propsWithDefault';
 

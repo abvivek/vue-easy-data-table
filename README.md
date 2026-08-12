@@ -3,10 +3,12 @@
 </p>
 
 ## Introduction
-vue3-easy-data-table is a customizable and easy-to-use data table component made with Vue.js 3.x.
+**vue-easy-data-table** is an actively maintained fork/successor of [vue3-easy-data-table](https://github.com/HC200ok/vue3-easy-data-table) — a customizable and easy-to-use data table component for Vue.js 3.x.
+
+See [MIGRATION.md](./MIGRATION.md) for package rename notes. The public component API (props/slots/emits) is unchanged.
 
 ## Website
-https://hc200ok.github.io/vue3-easy-data-table-doc/
+https://hc200ok.github.io/vue3-easy-data-table-doc/ (upstream docs; still applicable)
 
 <img src="./images/demo.png"  />
 
@@ -34,15 +36,17 @@ https://hc200ok.github.io/vue3-easy-data-table-doc/
 ### 1. ES module
 #### Install
 ```js
-npm install vue3-easy-data-table
+npm install vue-easy-data-table
 // or
-yarn add vue3-easy-data-table
+yarn add vue-easy-data-table
 ```
 
-#### Regist
+Requires Vue `^3.4.0 || ^3.5.0` as a peer dependency.
+
+#### Register
 ```js
-import Vue3EasyDataTable from 'vue3-easy-data-table';
-import 'vue3-easy-data-table/dist/style.css';
+import Vue3EasyDataTable from 'vue-easy-data-table';
+import 'vue-easy-data-table/dist/style.css';
 
 const app = createApp(App);
 app.component('EasyDataTable', Vue3EasyDataTable);
@@ -58,7 +62,7 @@ app.component('EasyDataTable', Vue3EasyDataTable);
 </template>
 
 <script lang="ts">
-import type { Header, Item } from "vue3-easy-data-table";
+import type { Header, Item } from "vue-easy-data-table";
 
 export default defineComponent({
   setup() {
@@ -86,9 +90,9 @@ export default defineComponent({
 
 ### 2. CDN:
 ```html
-<link href="https://unpkg.com/vue3-easy-data-table/dist/style.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/vue@3.2.1/dist/vue.global.js"></script>
-<script src="https://unpkg.com/vue3-easy-data-table"></script>
+<link href="https://unpkg.com/vue-easy-data-table/dist/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.js"></script>
+<script src="https://unpkg.com/vue-easy-data-table"></script>
 
 <div id="app">
   <easy-data-table
@@ -100,7 +104,7 @@ export default defineComponent({
 <script>
   const App = {
     components: {
-      EasyDataTable: window['vue3-easy-data-table'],
+      EasyDataTable: window['vue3-easy-data-table'], // UMD global name (unchanged)
     },
     data () {
       return {

@@ -14,7 +14,7 @@ export default function usePagination(
 ) {
   const currentPaginationNumber = ref(serverOptions.value ? serverOptions.value.page : currentPage.value);
   const maxPaginationNumber = computed((): number => Math.ceil(totalItemsLength.value / rowsPerPage.value));
-  // eslint-disable-next-line max-len
+   
   const isLastPage = computed((): boolean => maxPaginationNumber.value === 0 || (currentPaginationNumber.value === maxPaginationNumber.value));
   const isFirstPage = computed((): boolean => currentPaginationNumber.value === 1);
 

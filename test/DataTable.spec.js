@@ -17,7 +17,7 @@ describe('Button Pagination', () => {
         rowsPerPage: 5,
       },
     });
-    expect(wrapper.find('.data-table').exists()).toBe(true);
+    expect(wrapper.find('.vue3-easy-data-table').exists()).toBe(true);
   });
 
   /**
@@ -86,7 +86,7 @@ describe('Multiple selecting', () => {
         rowsPerPage: 5,
       },
     });
-    const singleCheckboxArr = wrapper.findAll('.single-select__checkbox');
+    const singleCheckboxArr = wrapper.findAll('.vue3-easy-data-table__body .easy-checkbox');
     const firstSingleCheckbox = singleCheckboxArr.at(0);
     const secondSingleCheckbox = singleCheckboxArr.at(1);
     await firstSingleCheckbox.trigger('click');
@@ -106,14 +106,14 @@ describe('Multiple selecting', () => {
         rowsPerPage: 5,
       },
     });
-    const singleCheckboxArr = wrapper.findAll('.single-select__checkbox');
+    const singleCheckboxArr = wrapper.findAll('.vue3-easy-data-table__body .easy-checkbox');
     const firstSingleCheckbox = singleCheckboxArr.at(0);
     await firstSingleCheckbox.trigger('click');
 
     const nextPageButton = wrapper.find('.next-page__click-button');
     await nextPageButton.trigger('click');
 
-    const singleCheckboxArrInSecondPage = wrapper.findAll('.single-select__checkbox');
+    const singleCheckboxArrInSecondPage = wrapper.findAll('.vue3-easy-data-table__body .easy-checkbox');
     const firstSingleCheckboxInSecondPage = singleCheckboxArrInSecondPage.at(0);
     await firstSingleCheckboxInSecondPage.trigger('click');
 
