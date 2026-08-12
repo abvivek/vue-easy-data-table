@@ -130,7 +130,9 @@
                        typeof bodyRowClassName === 'string' ? bodyRowClassName : bodyRowClassName(item, index + 1)]"
               @click="($event) => {
                 clickRow(item, 'single', $event);
-                clickRowToExpand && updateExpandingItemIndexList(index + prevPageEndIndex, item, $event);
+                if (clickRowToExpand && isRowExpandable(item)) {
+                  updateExpandingItemIndexList(index + prevPageEndIndex, item, $event);
+                }
               }"
               @dblclick="($event) => {clickRow(item, 'double', $event)}"
               @contextmenu="($event) => {contextMenuRow(item, $event)}"
@@ -141,10 +143,10 @@
                 :style="getFixedDistance(column, 'td')"
                 :class="[{
                   'shadow': column === lastFixedColumn,
-                  'can-expand': column === 'expand',
+                  'can-expand': column === 'expand' && isRowExpandable(item),
                 // eslint-disable-next-line max-len
                 }, typeof bodyItemClassName === 'string' ? bodyItemClassName : bodyItemClassName(column, index + 1), `direction-${bodyTextDirection}`]"
-                @click="column === 'expand' ? updateExpandingItemIndexList(index + prevPageEndIndex, item, $event) : null"
+                @click="(column === 'expand' && isRowExpandable(item)) ? updateExpandingItemIndexList(index + prevPageEndIndex, item, $event) : null"
               > 
                 <slot
                   v-if="slots[`item-${column}`]"
@@ -158,6 +160,7 @@
                 />
                 <template v-else-if="column === 'expand'">
                   <i
+                    v-if="isRowExpandable(item)"
                     class="expand-icon"
                     :class="{'expanding': expandingItemIndexList.includes(prevPageEndIndex + index)}"
                   />
@@ -340,6 +343,7 @@ const {
   bodyTextDirection,
   checkboxColumnWidth,
   currentPage,
+  expandable,
   expandColumnWidth,
   filterOptions,
   fixedCheckbox,
@@ -383,6 +387,12 @@ const slots = useSlots();
 const ifHasPaginationSlot = computed(() => !!slots.pagination);
 const ifHasLoadingSlot = computed(() => !!slots.loading);
 const ifHasExpandSlot = computed(() => !!slots.expand);
+
+const isRowExpandable = (item: Item): boolean => {
+  const rule = expandable.value;
+  if (typeof rule === 'function') return !!rule(item);
+  return rule !== false;
+};
 const ifHasBodySlot = computed(() => !!slots.body);
 
 // global dataTable $ref
@@ -533,8 +543,6 @@ const {
   updateExpandingItemIndexList,
   clearExpandingItemIndexList,
 } = useExpandableRow(
-  pageItems,
-  prevPageEndIndex,
   emits,
 );
 

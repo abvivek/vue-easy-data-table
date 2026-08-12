@@ -53,3 +53,14 @@ Props, slots, emits, and CSS class names remain compatible with upstream `vue3-e
 
 - `update:currentPage` emit supports `v-model:current-page` for client-side pagination control.
 - Server-side header “select all” merges/removes the **current page** into `itemsSelected` (does not wipe prior cross-page selection). The existing `selectAll` event is still emitted when checking the header box.
+- `expandable` prop (`boolean | (item) => boolean`, default `true`) gates per-row expand icon and expand clicks when using `#expand` (upstream #239).
+
+### Pagination behavior (client mode)
+
+| Trigger | Behavior |
+| --- | --- |
+| `searchValue` / `filterOptions` change | Reset to page **1** |
+| `items` replaced and current page exceeds new max | **Clamp** to last valid page (does not force page 1 if still in range) |
+| `currentPage` / `v-model:current-page` prop change | Sync internal page |
+
+Server mode continues to own page via `v-model:server-options` (unchanged).

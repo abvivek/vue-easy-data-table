@@ -263,3 +263,84 @@ describe('P0: package entry surface', () => {
     expect(mod.default).toBe(mod.Vue3EasyDataTable);
   });
 });
+
+describe('P1 leftover: expand row (#239)', () => {
+  const headers = [
+    { text: 'NAME', value: 'name' },
+    { text: 'HAS DETAIL', value: 'hasDetail' },
+  ];
+
+  it('expands using the page-global index even when rows have checkbox metadata', async () => {
+    const items = [
+      { name: 'a', note: 'one' },
+      { name: 'b', note: 'two' },
+      { name: 'c', note: 'three' },
+    ];
+    const wrapper = mount(DataTable, {
+      props: {
+        items,
+        headers,
+        itemsSelected: [],
+        rowsPerPage: 10,
+      },
+      slots: {
+        expand: '<div class="expand-body">{{ note }}</div>',
+      },
+    });
+    await nextTick();
+    expect(wrapper.findAll('.expand-icon')).toHaveLength(3);
+    await wrapper.findAll('td.can-expand').at(1).trigger('click');
+    const expandEvents = wrapper.emitted('expandRow');
+    expect(expandEvents).toBeTruthy();
+    expect(expandEvents[0][0]).toBe(1);
+    expect(expandEvents[0][1].name).toBe('b');
+    expect(wrapper.find('.expand-body').text()).toBe('two');
+  });
+
+  it('hides expand icon and ignores clicks when expandable predicate is false', async () => {
+    const items = [
+      { name: 'a', hasDetail: true, note: 'one' },
+      { name: 'b', hasDetail: false, note: 'two' },
+      { name: 'c', hasDetail: true, note: 'three' },
+    ];
+    const wrapper = mount(DataTable, {
+      props: {
+        items,
+        headers,
+        rowsPerPage: 10,
+        expandable: (item) => item.hasDetail === true,
+      },
+      slots: {
+        expand: '<div class="expand-body">{{ note }}</div>',
+      },
+    });
+    await nextTick();
+    expect(wrapper.findAll('.expand-icon')).toHaveLength(2);
+
+    // Middle row has no icon and clicking its first (expand) cell must not emit
+    const expandCells = wrapper.findAll('td.can-expand');
+    expect(expandCells).toHaveLength(2);
+    const middleRowCells = wrapper.findAll('tbody tr').at(1).findAll('td');
+    await middleRowCells.at(0).trigger('click');
+    expect(wrapper.emitted('expandRow')).toBeFalsy();
+    expect(wrapper.findAll('.expand-body')).toHaveLength(0);
+  });
+
+  it('keeps expanded panel open for the correct row after toggle', async () => {
+    const items = mockClientItems(5);
+    const wrapper = mount(DataTable, {
+      props: {
+        items,
+        headers: headersMocked,
+        rowsPerPage: 5,
+      },
+      slots: {
+        expand: '<div class="expand-body">{{ name }}</div>',
+      },
+    });
+    await wrapper.findAll('td.can-expand').at(2).trigger('click');
+    expect(wrapper.find('.expand-body').text()).toBe(items[2].name);
+    await wrapper.findAll('td.can-expand').at(2).trigger('click');
+    expect(wrapper.findAll('.expand-body')).toHaveLength(0);
+  });
+});

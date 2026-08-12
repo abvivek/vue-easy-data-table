@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0-alpha.2
+
+Phase 1 leftovers:
+
+- **Expand (#239)**: Fixed expand-row index tracking (no longer re-finds via fragile `JSON.stringify` on page rows that may include `checkbox`/`index`). Added additive `expandable` prop (`boolean | (item) => boolean`) so expand icons/clicks can be gated per row.
+- **Pagination docs**: Clarified client-side behavior — search/filter resets to page 1; replacing `items` clamps to the last valid page when the current page is out of range (does not always force page 1).
+
 ## 1.6.0-alpha.1
 
 Phase 1 correctness / P0 packaging & bug fixes:

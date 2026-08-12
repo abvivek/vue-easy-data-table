@@ -27,6 +27,16 @@ export default {
     type: String,
     default: 'No Available Data',
   },
+  /**
+   * Control which rows show an expand affordance.
+   * `true` (default): all rows expandable when `#expand` is provided.
+   * `false`: never show/expand.
+   * function: per-row predicate (receives the row item).
+   */
+  expandable: {
+    type: [Boolean, Function] as PropType<boolean | ((item: Item) => boolean)>,
+    default: true,
+  },
   expandColumnWidth: {
     type: Number,
     default: 36,
