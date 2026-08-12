@@ -206,3 +206,19 @@ No breaking API changes. CSS class names (`sortable`, `expand-icon`, `easy-check
 Custom `#header` / `#item` / `#expand` / `#pagination` slots are unchanged — if you replace pagination or expand UI entirely, keep providing accessible names in your own markup.
 
 Deep right-to-left layout (full mirror of sticky columns, arrow glyphs, etc.) is **not** complete in this release; set `dir="rtl"` on an ancestor for the quick wins above.
+
+### Bugfix — sticky/fixed columns (1.6.0-alpha.7)
+
+No public API change: `fixed: true` + `width` is still the documented way to pin columns.
+
+Sticky `left` previously summed configured `header.width` only. With `table-layout: fixed` and `width: 100%`, painted columns are often wider than `width`, and content-box padding (`--easy-table-body-item-padding` / `--easy-table-header-item-padding`, default `0px 10px`) was omitted. Scrolling cells could slide over frozen ones.
+
+**What you may notice (visual bugfix, not a breaking API):**
+
+- Frozen columns stay aligned with their painted width (including padding and extra stretch).
+- Sticky cells have an opaque background and sit above scrolling cells (z-index body `2`, sticky header `3`, frozen header corner `4`).
+- Checkbox / index / expand columns that are auto-pinned with user `fixed` columns keep the same `left` chain.
+
+Right-side frozen columns are still not implemented. Deep RTL sticky (`left` vs `right`) is still deferred.
+
+If you overrode sticky `left` / `z-index` in app CSS, drop those workarounds — the library now measures painted widths.
