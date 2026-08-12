@@ -104,7 +104,7 @@ export default defineComponent({
 <script>
   const App = {
     components: {
-      EasyDataTable: window['vue3-easy-data-table'], // UMD global name (unchanged)
+      EasyDataTable: window['vue3-easy-data-table'].default, // or .Vue3EasyDataTable
     },
     data () {
       return {

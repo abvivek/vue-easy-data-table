@@ -3,7 +3,7 @@
   "author": "HC200ok",
   "description": "A customizable and easy-to-use data table component made with Vue.js 3.x. Actively maintained fork of vue3-easy-data-table.",
   "private": false,
-  "version": "1.6.0-alpha.0",
+  "version": "1.6.0-alpha.1",
   "types": "./types/main.d.ts",
   "license": "MIT",
   "files": [
@@ -28,8 +28,15 @@
   "exports": {
     ".": {
       "types": "./types/main.d.ts",
-      "import": "./dist/vue3-easy-data-table.es.js",
-      "require": "./dist/vue3-easy-data-table.umd.js"
+      "import": {
+        "types": "./types/main.d.ts",
+        "default": "./dist/vue3-easy-data-table.es.js"
+      },
+      "require": {
+        "types": "./types/main.d.ts",
+        "default": "./dist/vue3-easy-data-table.umd.js"
+      },
+      "default": "./dist/vue3-easy-data-table.es.js"
     },
     "./dist/style.css": "./dist/style.css"
   },

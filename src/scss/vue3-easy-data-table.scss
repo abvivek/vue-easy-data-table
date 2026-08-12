@@ -232,7 +232,7 @@ table {
   position: relative;
   .expand-icon {
     border: solid;
-    border-color: var(easy-table-body-row-font-color);
+    border-color: var(--easy-table-body-row-font-color);
 
     border-width: 0 2px 2px 0;
     display: inline-block;

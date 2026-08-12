@@ -18,6 +18,8 @@ export default defineConfig({
     rollupOptions: {
       external: ['vue'],
       output: {
+        // Named + default exports (ESM). UMD consumers: use `.default` or `.Vue3EasyDataTable`.
+        exports: 'named',
         globals: {
           vue: 'Vue',
         },

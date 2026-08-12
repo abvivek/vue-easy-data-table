@@ -3,6 +3,7 @@ import {
 } from 'vue';
 import type { Item } from '../types/main';
 import type { MultipleSelectStatus } from '../types/internal';
+import { itemsEqual } from '../utils';
 
 export default function usePageItems(
   currentPaginationNumber: Ref<number>,
@@ -41,28 +42,24 @@ export default function usePageItems(
     return itemsInPage.value;
   });
 
+  const isItemSelected = (item: Item): boolean => {
+    const itemDeepCloned = { ...item };
+    delete itemDeepCloned.index;
+    delete itemDeepCloned.checkbox;
+    return selectItemsComputed.value.some((selectItem) => itemsEqual(selectItem, itemDeepCloned));
+  };
+
   const multipleSelectStatus = computed((): MultipleSelectStatus => {
-    if (selectItemsComputed.value.length === 0) {
+    // Client: select-all targets the full filtered set. Server: only the current page is loaded.
+    const targetItems = isServerSideMode.value ? itemsInPage.value : totalItems.value;
+
+    if (selectItemsComputed.value.length === 0 || targetItems.length === 0) {
       return 'noneSelected';
     }
-    const isNoneSelected = selectItemsComputed.value.every((itemSelected) => {
-      if (totalItems.value.findIndex((item) => JSON.stringify(itemSelected) === JSON.stringify(item)) !== -1) {
-        return false;
-      }
-      return true;
-    });
-    if (isNoneSelected) return 'noneSelected';
 
-    if (selectItemsComputed.value.length === totalItems.value.length) {
-      const isAllSelected = selectItemsComputed.value.every((itemSelected) => {
-        if (totalItems.value.findIndex((item) => JSON.stringify(itemSelected) === JSON.stringify(item)) === -1) {
-          return false;
-        }
-        return true;
-      });
-      return isAllSelected ? 'allSelected' : 'partSelected';
-    }
-
+    const selectedCount = targetItems.filter((item) => isItemSelected(item)).length;
+    if (selectedCount === 0) return 'noneSelected';
+    if (selectedCount === targetItems.length) return 'allSelected';
     return 'partSelected';
   });
 

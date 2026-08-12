@@ -1,5 +1,5 @@
 import {
-  ref, Ref, computed, ComputedRef,
+  ref, Ref, computed, ComputedRef, watch,
 } from 'vue';
 import type { ServerOptions } from '../types/main';
 
@@ -14,9 +14,31 @@ export default function usePagination(
 ) {
   const currentPaginationNumber = ref(serverOptions.value ? serverOptions.value.page : currentPage.value);
   const maxPaginationNumber = computed((): number => Math.ceil(totalItemsLength.value / rowsPerPage.value));
-   
+
   const isLastPage = computed((): boolean => maxPaginationNumber.value === 0 || (currentPaginationNumber.value === maxPaginationNumber.value));
   const isFirstPage = computed((): boolean => currentPaginationNumber.value === 1);
+
+  // Keep client pagination in sync when the `currentPage` prop changes (v-model / controlled).
+  watch(currentPage, (page) => {
+    if (isServerSideMode.value) return;
+    if (typeof page === 'number' && page > 0 && page !== currentPaginationNumber.value) {
+      currentPaginationNumber.value = page;
+    }
+  });
+
+  // When filtered/replaced data shrinks, clamp to a valid page so the table is not blank.
+  watch(maxPaginationNumber, (max) => {
+    if (isServerSideMode.value) return;
+    if (max === 0) {
+      if (currentPaginationNumber.value !== 1) {
+        currentPaginationNumber.value = 1;
+      }
+      return;
+    }
+    if (currentPaginationNumber.value > max) {
+      currentPaginationNumber.value = max;
+    }
+  });
 
   const nextPage = () => {
     if (totalItemsLength.value === 0) return;

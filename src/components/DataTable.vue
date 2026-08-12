@@ -408,6 +408,7 @@ const emits = defineEmits([
   'updateFilter',
   'update:itemsSelected',
   'update:serverOptions',
+  'update:currentPage',
   'updatePageItems',
   'updateTotalItems',
   'selectAll'
@@ -596,6 +597,13 @@ watch(rowsPerPageRef, (value) => {
 watch([searchValue, filterOptions], () => {
   if (!isServerSideMode.value) {
     updatePage(1);
+  }
+});
+
+// Keep v-model:current-page parents in sync (client mode only).
+watch(currentPaginationNumber, (page) => {
+  if (!isServerSideMode.value) {
+    emits('update:currentPage', page);
   }
 });
 
