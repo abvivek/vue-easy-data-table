@@ -355,7 +355,7 @@ const items: Item[] = [/* … */];
 </template>
 ```
 
-`.vue3-easy-data-table__main.fixed-header th` stays vertically sticky (`z-index` 3). `th.fixed-column` wins at `z-index` 4 so scrolling header cells cannot paint over frozen ones.
+`.vue3-easy-data-table__main.fixed-header th` stays vertically sticky (`z-index` 3). `th.fixed-column` wins at `z-index` 4 with an opaque header background so scrolling header cells cannot paint through frozen ones (including `#customize-headers` markup).
 
 ---
 

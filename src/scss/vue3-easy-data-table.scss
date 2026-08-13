@@ -39,21 +39,22 @@
     }
   }
   &.show-shadow {
-    th.shadow, :deep(td.shadow) {
+    :deep(th.shadow), :deep(td.shadow) {
       &::after {
         box-shadow: inset 6px 0 5px -3px rgb(0 0 0 / 20%);
       }
     }
   }
   &.fixed-header {
-    /* Vertically sticky header cells (STICKY_HEADER_Z_INDEX). */
-    th {
+    /* Vertically sticky header cells (STICKY_HEADER_Z_INDEX).
+       :deep so #customize-headers <th> (parent-owned slot content) match. */
+    :deep(th) {
       position: sticky;
       top: 0;
       z-index: 3;
     }
     /* Frozen corner wins over scrolling header th (FIXED_COLUMN_HEADER_Z_INDEX). */
-    th.fixed-column {
+    :deep(th.fixed-column) {
       z-index: 4;
       background-color: var(--easy-table-header-background-color);
     }
@@ -178,24 +179,23 @@ table {
 }
 
 // fixed-columns feature related
-.vue3-easy-data-table__header th, .vue3-easy-data-table__body :deep(td) {
-  &.shadow {
-    &::after {
-      pointer-events: none;
-      content: "";
-      width: 36px;
-      display: inline-block;
-      height: 100%;
-      position: absolute;
-      top: 0px;
-      right: -36px;
-      box-shadow: none;
-    }
+.vue3-easy-data-table__main :deep(th.shadow),
+.vue3-easy-data-table__body :deep(td.shadow) {
+  &::after {
+    pointer-events: none;
+    content: "";
+    width: 36px;
+    display: inline-block;
+    height: 100%;
+    position: absolute;
+    top: 0px;
+    right: -36px;
+    box-shadow: none;
   }
 }
 
-.vue3-easy-data-table__header th.fixed-column,
-.vue3-easy-data-table__main th.fixed-column {
+/* :deep: #customize-headers cells are compiled in the parent and lack this SFC's scope id. */
+.vue3-easy-data-table__main :deep(th.fixed-column) {
   background-color: var(--easy-table-header-background-color);
   z-index: 4;
 }
@@ -306,7 +306,7 @@ table {
       transform: rotate(45deg);
     }
   }
-  .vue3-easy-data-table__header th.shadow::after,
+  .vue3-easy-data-table__main :deep(th.shadow)::after,
   .vue3-easy-data-table__body :deep(td.shadow)::after {
     right: auto;
     left: -36px;

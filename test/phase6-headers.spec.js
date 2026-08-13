@@ -7,6 +7,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import DataTable from '../src/components/DataTable.vue';
 import { readPaintedColumnWidths, FIXED_COLUMN_HEADER_Z_INDEX, STICKY_HEADER_Z_INDEX } from '../src/stickyColumns';
 import {
@@ -686,6 +689,20 @@ describe('Phase 6 #customize-headers + fixed columns', () => {
     expect(FIXED_COLUMN_HEADER_Z_INDEX).toBeGreaterThan(STICKY_HEADER_Z_INDEX);
 
     wrapper.unmount();
+  });
+
+  it('uses :deep(th.fixed-column) so scoped CSS matches #customize-headers cells', () => {
+    // Parent-owned slot <th> do not get this SFC's data-v id. Without :deep (or
+    // :slotted, which only matches slot roots — here thead, not nested th)
+    // the background/z-index rules never apply and later headers show through.
+    const scss = readFileSync(
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src/scss/vue3-easy-data-table.scss'),
+      'utf8',
+    );
+    expect(scss).toMatch(/:deep\(\s*th\.fixed-column\s*\)/);
+    expect(scss).not.toMatch(/^\s*th\.fixed-column\s*\{/m);
+    expect(scss).not.toMatch(/\.vue3-easy-data-table__main\s+th\.fixed-column/);
+    expect(scss).not.toMatch(/\.vue3-easy-data-table__header\s+th\.fixed-column/);
   });
 
   it('sticks a fully-fixed group parent using the first leaf left', async () => {

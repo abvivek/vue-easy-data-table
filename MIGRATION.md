@@ -255,6 +255,6 @@ const headers: Header[] = [
 
 **`#customize-headers`** still replaces the entire `<thead>`. Prefer `children` for grouped headers. The slot binds `headers` (leaf columns for render), `headerRows`, `updateSortField`, `toggleSelectAll`, `multipleSelectStatus`, `isMultiSorting`, `getMultiSortNumber`, **`getHeaderCellFixedStyle`**, **`getFixedDistance`**, **`lastFixedColumn`**, and **`fixedHeaders`**.
 
-Frozen custom `<th>` must apply `:style="getHeaderCellFixedStyle(header)"` and class `fixed-column` (plus `shadow` on the last fixed leaf/group). Do not reimplement painted-width `left`. `.fixed-header th` stays vertically sticky (`z-index` 3 / `STICKY_HEADER_Z_INDEX`); `th.fixed-column` wins at `z-index` 4 (`FIXED_COLUMN_HEADER_Z_INDEX`).
+Frozen custom `<th>` must apply `:style="getHeaderCellFixedStyle(header)"` and class `fixed-column` (plus `shadow` on the last fixed leaf/group). Do not reimplement painted-width `left`. `.fixed-header th` stays vertically sticky (`z-index` 3 / `STICKY_HEADER_Z_INDEX`); `th.fixed-column` wins at `z-index` 4 (`FIXED_COLUMN_HEADER_Z_INDEX`) with an opaque header background. Those rules pierce via `:deep()` so slotted `#customize-headers` cells match.
 
 CSS class hooks (`vue3-easy-data-table__header`, `sortable`, `direction-*`) are unchanged. Sort still lives on sortable leaves, not group parent cells.
