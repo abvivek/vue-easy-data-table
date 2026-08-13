@@ -1,111 +1,151 @@
 <p align="center">
-<img src="logo.png"  width="400"/ />
+  <img src="logo.png" width="400" alt="vue-easy-data-table" />
 </p>
 
-## Introduction
-**vue-easy-data-table** is an actively maintained fork/successor of [vue3-easy-data-table](https://github.com/HC200ok/vue3-easy-data-table) — a customizable and easy-to-use data table component for Vue.js 3.x.
+<p align="center">
+  <a href="https://www.npmjs.com/package/vue-easy-data-table"><img src="https://img.shields.io/npm/v/vue-easy-data-table.svg" alt="npm" /></a>
+  <a href="https://www.npmjs.com/package/vue-easy-data-table"><img src="https://img.shields.io/npm/dm/vue-easy-data-table.svg" alt="downloads" /></a>
+  <img src="https://img.shields.io/badge/vue-3.4%20%7C%203.5-42b883" alt="Vue 3" />
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT" />
+</p>
 
-See [MIGRATION.md](./MIGRATION.md) for package rename notes. The public component API (props/slots/emits) remains compatible; Phase 2 adds optional `item-key`, Phase 3 adds opt-in tbody `virtual` / `virtual-row-height`, Phase 4 improves server-side page sync / `server-select-all`, Phase 5 adds accessibility attributes and keyboard-friendly controls without breaking class hooks, and Phase 6 adds optional `Header` fields (`align`, `className`, `hidden`, `children`) for per-column styling and grouped headers (see [docs/BENCHMARKS.md](./docs/BENCHMARKS.md)).
+A Vue 3 data table with sorting, search, pagination, selection, fixed columns, and slots — plus opt-in virtual rows, grouped headers, and better server-side DX.
 
-## For AI agents
+This is an actively maintained fork of [`vue3-easy-data-table`](https://github.com/HC200ok/vue3-easy-data-table). **1.6.0** is drop-in compatible with upstream 1.5.x; new APIs are additive.
 
-Start at [AGENTS.md](./AGENTS.md) (install, critical rules, pitfalls). Full surface: [docs/API.md](./docs/API.md). Copy-paste patterns: [docs/RECIPES.md](./docs/RECIPES.md).
-
-## Website
-https://hc200ok.github.io/vue3-easy-data-table-doc/ (upstream docs; still applicable)
-
-<img src="./images/demo.png"  />
-
-## Features
-1. [Item slot](https://hc200ok.github.io/vue3-easy-data-table-doc/features/item-slot.html)
-2. [Buttons pagination](https://hc200ok.github.io/vue3-easy-data-table-doc/features/buttons-pagination.html)
-3. [Multiple selecting](https://hc200ok.github.io/vue3-easy-data-table-doc/features/multiple-selecting.html)
-4. [Pagination slot](https://hc200ok.github.io/vue3-easy-data-table-doc/features/pagination-slot.html)
-5. [Single field sorting](https://hc200ok.github.io/vue3-easy-data-table-doc/features/single-field-sorting.html)
-6. [Searching](https://hc200ok.github.io/vue3-easy-data-table-doc/features/searching.html)
-7. [Server side paginate and sort](https://hc200ok.github.io/vue3-easy-data-table-doc/features/server-side-paginate-and-sort.html) — fork improvements (page sync, custom `serverOptions` fields, `server-select-all`) in [MIGRATION.md](./MIGRATION.md)
-8. [Loading slot](https://hc200ok.github.io/vue3-easy-data-table-doc/features/loading-slot.html)
-9. [Footer customization](https://hc200ok.github.io/vue3-easy-data-table-doc/features/footer-customization.html)
-10. [Filtering](https://hc200ok.github.io/vue3-easy-data-table-doc/features/filtering.html) (new feature since version `1.2.3`)
-11. [Click row](https://hc200ok.github.io/vue3-easy-data-table-doc/features/click-row.html) (new feature since version `1.2.4`)
-12. [Column width](https://hc200ok.github.io/vue3-easy-data-table-doc/features/column-width.html) (new feature since version `1.2.10`)
-13. [Fixed columns](https://hc200ok.github.io/vue3-easy-data-table-doc/features/fixed-column.html) (new feature since version `1.2.10`)
-14. [Header slot](https://hc200ok.github.io/vue3-easy-data-table-doc/features/header-slot.html) (new feature since version `1.2.25`)
-15. [Expand slot](https://hc200ok.github.io/vue3-easy-data-table-doc/features/expand-slot.html) (new feature since version `1.3.2`)
-16. [Style customization](https://hc200ok.github.io/vue3-easy-data-table-doc/features/style-customization.html) (new feature since version `1.3.11`)
-17. [Border cell](https://hc200ok.github.io/vue3-easy-data-table-doc/features/border-cell.html) (new feature since version `1.3.11`)
-18. [Class name customization](https://hc200ok.github.io/vue3-easy-data-table-doc/features/class-name-customization.html) (new feature since version `1.3.11`)
-19. **Virtual rows** (opt-in `virtual` + `virtual-row-height`, since `1.6.0`) — see [MIGRATION.md](./MIGRATION.md)
-20. **Accessibility** (sortable `aria-sort` + keyboard, labeled checkboxes/pagination/expand, since `1.6.0`) — see [MIGRATION.md](./MIGRATION.md)
-21. **Customizable headers** (`align` / `className` / `hidden` + grouped `children`, since `1.6.0`) — see [docs/API.md](./docs/API.md)
-
-## Getting started
-### 1. ES module
-#### Install
-```js
+```bash
 npm install vue-easy-data-table
-// or
-yarn add vue-easy-data-table
 ```
 
-Requires Vue `^3.4.0 || ^3.5.0` as a peer dependency.
+<p align="center">
+  <img src="./images/demo.png" alt="Table demo" />
+</p>
 
-#### Register
+## Why this fork
+
+Upstream last published in 2023. This package keeps the same component API and CSS class hooks, and ships fixes plus features that were stuck as README todos:
+
+| 1.6.0 | What you get |
+| --- | --- |
+| **`item-key`** | Stable row identity for selection, expand, and virtual tables (skip slow `JSON.stringify`) |
+| **Virtual rows** | Opt-in windowing of the current page (`virtual` + `virtual-row-height`) |
+| **Server DX** | Footer page tracks `serverOptions.page`; custom `serverOptions` fields are preserved; `server-select-all` |
+| **Headers** | Per-column `align` / `className` / `hidden`, grouped `children`, custom sort compare |
+| **Sticky columns** | Painted-width `left` and opaque stacking so scrolling cells cannot paint through frozen ones |
+| **Accessibility** | `aria-sort`, keyboard sort, labeled checkboxes / pagination / expand |
+
+Vue is a **peer** (`^3.4.0 || ^3.5.0`), not bundled.
+
+## Install
+
+```bash
+npm install vue-easy-data-table
+# or: pnpm add vue-easy-data-table / yarn add vue-easy-data-table
+```
+
+Register globally (or import per component):
+
 ```js
 import Vue3EasyDataTable from 'vue-easy-data-table';
-import 'vue-easy-data-table/dist/style.css';
+import 'vue-easy-data-table/dist/style.css'; // required — this exact path
 
-const app = createApp(App);
 app.component('EasyDataTable', Vue3EasyDataTable);
+// or: import { Vue3EasyDataTable as EasyDataTable } from 'vue-easy-data-table';
 ```
 
-#### Use
-```js
+Types (`Header`, `Item`, `ServerOptions`, …) come from the package root.
+
+## Quick start
+
+```vue
 <template>
   <EasyDataTable
     :headers="headers"
     :items="items"
+    item-key="name"
   />
 </template>
 
-<script lang="ts">
-import type { Header, Item } from "vue-easy-data-table";
+<script setup lang="ts">
+import type { Header, Item } from 'vue-easy-data-table';
 
-export default defineComponent({
-  setup() {
-    const headers: Header[] = [
-      { text: "Name", value: "name" },
-      { text: "Height (cm)", value: "height", sortable: true },
-      { text: "Weight (kg)", value: "weight", sortable: true },
-      { text: "Age", value: "age", sortable: true }
-    ];
+const headers: Header[] = [
+  { text: 'Name', value: 'name' },
+  { text: 'Height (cm)', value: 'height', sortable: true },
+  { text: 'Weight (kg)', value: 'weight', sortable: true },
+  { text: 'Age', value: 'age', sortable: true },
+];
 
-    const items: Item[] = [
-      { "name": "Curry", "height": 178, "weight": 77, "age": 20 },
-      { "name": "James", "height": 180, "weight": 75, "age": 21 },
-      { "name": "Jordan", "height": 181, "weight": 73, "age": 22 }
-    ];
-
-    return {
-      headers,
-      items
-    };
-  },
-});
+const items: Item[] = [
+  { name: 'Curry', height: 178, weight: 77, age: 20 },
+  { name: 'James', height: 180, weight: 75, age: 21 },
+  { name: 'Jordan', height: 181, weight: 73, age: 22 },
+];
 </script>
 ```
 
-### 2. CDN:
+Copy-paste patterns (search, selection, server mode, virtual, grouped headers): **[docs/RECIPES.md](./docs/RECIPES.md)**.  
+Full props / slots / emits / CSS variables: **[docs/API.md](./docs/API.md)**.
+
+## Features
+
+**Client mode** (default): pass `items`; the table searches, filters, sorts, and paginates locally.
+
+**Server mode**: set `v-model:server-options` (non-null) plus `server-items-length`. The parent owns fetch / sort / page; client search and filter are skipped.
+
+| | |
+| --- | --- |
+| Sorting | Single or multi-column; numeric-aware; optional `Header.sort` compare (client) |
+| Search & filter | Client-only; `search-value` / `search-field` / `filter-options` |
+| Pagination | Footer, rows-per-page, optional numbered buttons; `v-model:current-page` in client mode |
+| Selection | `v-model:items-selected` (must be non-`null` to show checkboxes) |
+| Slots | Item, header, expand, loading, empty, pagination, body, `#customize-headers` |
+| Fixed columns | `Header.fixed` + `width`; sticky `left` follows painted width |
+| Layout | `table-height`, alternating rows, border cells, theme color, class-name hooks |
+| Virtual rows | `:virtual="true"` + `:virtual-row-height` + preferably `table-height` and `item-key` |
+| Grouped headers | `Header.children` (prefer this over `#customize-headers` for groups) |
+
+Use **`item-key`** (`"id"`, `"meta.uuid"`, …) on large, selectable, or virtual tables.
+
+## Migrating from `vue3-easy-data-table`
+
+```bash
+npm uninstall vue3-easy-data-table
+npm install vue-easy-data-table
+```
+
+```js
+// before
+import Vue3EasyDataTable from 'vue3-easy-data-table';
+import 'vue3-easy-data-table/dist/style.css';
+
+// after
+import Vue3EasyDataTable from 'vue-easy-data-table';
+import 'vue-easy-data-table/dist/style.css';
+```
+
+Component name, props, slots, emits, and CSS classes stay the same. Details: **[MIGRATION.md](./MIGRATION.md)**.
+
+## Docs
+
+| Doc | Use when |
+| --- | --- |
+| [docs/API.md](./docs/API.md) | Props, slots, emits, expose, CSS variables |
+| [docs/RECIPES.md](./docs/RECIPES.md) | Vue 3 SFC examples |
+| [MIGRATION.md](./MIGRATION.md) | Rename + 1.6.0 additive behavior |
+| [CHANGELOG.md](./CHANGELOG.md) | Release notes |
+| [AGENTS.md](./AGENTS.md) | Install rules and pitfalls (also for AI agents) |
+| [Upstream feature gallery](https://hc200ok.github.io/vue3-easy-data-table-doc/) | Visual examples; APIs still apply |
+
+## CDN
+
 ```html
-<link href="https://unpkg.com/vue-easy-data-table/dist/style.css" rel="stylesheet">
+<link href="https://unpkg.com/vue-easy-data-table/dist/style.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.js"></script>
 <script src="https://unpkg.com/vue-easy-data-table"></script>
 
 <div id="app">
-  <easy-data-table
-    :headers="headers"
-    :items="items"
-  />
+  <easy-data-table :headers="headers" :items="items" />
 </div>
 
 <script>
@@ -113,31 +153,25 @@ export default defineComponent({
     components: {
       EasyDataTable: window['vue3-easy-data-table'].default, // or .Vue3EasyDataTable
     },
-    data () {
+    data() {
       return {
-        headers:[
-          { text: "Name", value: "name" },
-          { text: "Height (cm)", value: "height", sortable: true },
-          { text: "Weight (kg)", value: "weight", sortable: true },
-          { text: "Age", value: "age", sortable: true }
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Age', value: 'age', sortable: true },
         ],
         items: [
-          { "name": "Curry", "height": 178, "weight": 77, "age": 20 },
-          { "name": "James", "height": 180, "weight": 75, "age": 21 },
-          { "name": "Jordan", "height": 181, "weight": 73, "age": 22 }
+          { name: 'Curry', age: 20 },
+          { name: 'James', age: 21 },
         ],
-      }
+      };
     },
   };
   Vue.createApp(App).mount('#app');
 </script>
 ```
 
-## Todo
-1. Refactory.
-3. ~~Make table header customizable.~~ (align/className/hidden + grouped headers since 1.6.0)
-4. ~~Vitual table rows.~~ (opt-in since `1.6.0`)
-5. Mobile responsive.
+The UMD global is still `vue3-easy-data-table` (dist filename unchanged for compatibility).
 
-## Contribution
-Shout out to the people who made new feature requests and reported issues to make this component better.
+## License
+
+MIT. Thanks to everyone who filed issues and feature requests on the original project and this fork.
