@@ -207,7 +207,7 @@ Custom `#header` / `#item` / `#expand` / `#pagination` slots are unchanged — i
 
 Deep right-to-left layout (full mirror of sticky columns, arrow glyphs, etc.) is **not** complete in this release; set `dir="rtl"` on an ancestor for the quick wins above.
 
-### Bugfix — sticky/fixed columns (1.6.0-alpha.7)
+### Bugfix — sticky/fixed columns (1.6.0)
 
 No public API change: `fixed: true` + `width` is still the documented way to pin columns.
 

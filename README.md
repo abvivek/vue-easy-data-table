@@ -35,9 +35,9 @@ https://hc200ok.github.io/vue3-easy-data-table-doc/ (upstream docs; still applic
 16. [Style customization](https://hc200ok.github.io/vue3-easy-data-table-doc/features/style-customization.html) (new feature since version `1.3.11`)
 17. [Border cell](https://hc200ok.github.io/vue3-easy-data-table-doc/features/border-cell.html) (new feature since version `1.3.11`)
 18. [Class name customization](https://hc200ok.github.io/vue3-easy-data-table-doc/features/class-name-customization.html) (new feature since version `1.3.11`)
-19. **Virtual rows** (opt-in `virtual` + `virtual-row-height`, since `1.6.0-alpha.4`) — see [MIGRATION.md](./MIGRATION.md)
-20. **Accessibility** (sortable `aria-sort` + keyboard, labeled checkboxes/pagination/expand, since `1.6.0-alpha.6`) — see [MIGRATION.md](./MIGRATION.md)
-21. **Customizable headers** (`align` / `className` / `hidden` + grouped `children`, since `1.6.0-alpha.8`) — see [docs/API.md](./docs/API.md)
+19. **Virtual rows** (opt-in `virtual` + `virtual-row-height`, since `1.6.0`) — see [MIGRATION.md](./MIGRATION.md)
+20. **Accessibility** (sortable `aria-sort` + keyboard, labeled checkboxes/pagination/expand, since `1.6.0`) — see [MIGRATION.md](./MIGRATION.md)
+21. **Customizable headers** (`align` / `className` / `hidden` + grouped `children`, since `1.6.0`) — see [docs/API.md](./docs/API.md)
 
 ## Getting started
 ### 1. ES module
@@ -135,8 +135,8 @@ export default defineComponent({
 
 ## Todo
 1. Refactory.
-3. ~~Make table header customizable.~~ (align/className/hidden + grouped headers since 1.6.0-alpha.8)
-4. ~~Vitual table rows.~~ (opt-in since `1.6.0-alpha.4`)
+3. ~~Make table header customizable.~~ (align/className/hidden + grouped headers since 1.6.0)
+4. ~~Vitual table rows.~~ (opt-in since `1.6.0`)
 5. Mobile responsive.
 
 ## Contribution

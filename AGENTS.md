@@ -48,7 +48,7 @@ Types (`Header`, `Item`, `ServerOptions`, …) come from the package root / `typ
 | [docs/RECIPES.md](./docs/RECIPES.md) | Copy-paste Vue 3 SFC patterns |
 | [types/main.d.ts](./types/main.d.ts) | Published TypeScript types |
 | [MIGRATION.md](./MIGRATION.md) | Rename + Phase 1–6 additive behavior |
-| [CHANGELOG.md](./CHANGELOG.md) | Release notes by alpha |
+| [CHANGELOG.md](./CHANGELOG.md) | Release notes |
 | [docs/BENCHMARKS.md](./docs/BENCHMARKS.md) | Perf notes (`item-key`, benches) |
 
 Source of truth for defaults: `src/propsWithDefault.ts` + required `headers` / `items` in `src/components/DataTable.vue`.
@@ -82,4 +82,4 @@ Full local benches (not CI-gated on timings): `npm run bench`.
 
 ## Versioning
 
-Current line is **`1.6.0-alpha.*`** (see `package.json`). Alphas/RCs ship additive Phase work (identity, virtual, server DX, a11y, header `align`/`className`/`hidden`/`children`) before a stable 1.6.0. Prefer latest alpha when documenting or consuming fork-only APIs (`item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, `#customize-headers` sticky helpers).
+Current line is **`1.6.0`** (see `package.json`). Public API is drop-in compatible with upstream 1.5.x; 1.6.x adds `item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, and `#customize-headers` sticky helpers.
