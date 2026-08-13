@@ -229,9 +229,12 @@ No breaking API. New optional `Header` fields; omit them for identical single-ro
 
 | Field | Effect |
 | --- | --- |
-| `align` | Per-column text direction on `<th>` + matching `<td>` (else `header-text-direction` / `body-text-direction`) |
+| `align` | Per-column text direction on matching `<td>` (and `<th>` unless `headerAlign` is set) |
+| `headerAlign` | Header-only align (falls back to `align`, then `header-text-direction`) |
+| `minWidth` / `maxWidth` | Column `<col>` min/max width in px |
 | `className` | Extra class on that column’s `<th>` and `<td>` (merged with table-level class-name props) |
 | `hidden` | Skip rendering the column; item data is unchanged |
+| `sort` | Client-mode custom compare `(a, b) => number`; ignored in server mode |
 | `children` | Nested group headers. Only leaves are body columns |
 
 ```ts
@@ -250,6 +253,6 @@ const headers: Header[] = [
 
 **`fixed` + groups:** a group is sticky only if **all** visible leaves are `fixed: true`. Mixing fixed and unfixed children warns and treats the group as unfixed.
 
-**`#customize-headers`** still replaces the entire `<thead>`. Prefer `children` for grouped headers; keep the slot for fully custom markup.
+**`#customize-headers`** still replaces the entire `<thead>`. Prefer `children` for grouped headers. The slot now binds `headers` (leaf columns for render), `headerRows`, `updateSortField`, `toggleSelectAll`, `multipleSelectStatus`, `isMultiSorting`, and `getMultiSortNumber` so a custom thead can keep sort / select-all.
 
 CSS class hooks (`vue3-easy-data-table__header`, `sortable`, `direction-*`) are unchanged. Sort still lives on sortable leaves, not group parent cells.

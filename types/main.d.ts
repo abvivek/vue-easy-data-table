@@ -28,18 +28,33 @@ export type FilterOption = {
   criteria: string
 }
 
+/** Client-side compare: negative if `a` precedes `b` in ascending order. */
+export type HeaderSortCompare = (a: Item, b: Item) => number
+
 export type Header = {
   text: string
   value: string
   sortable?: boolean
   fixed?: boolean
   width?: number
+  /** Min column width in px (`<col>` style). */
+  minWidth?: number
+  /** Max column width in px (`<col>` style). */
+  maxWidth?: number
   /** Per-column text align for th + matching td. Falls back to header/body text-direction props. */
   align?: TextDirection
+  /** Header-only align. Falls back to `align`, then `header-text-direction`. */
+  headerAlign?: TextDirection
   /** Extra class on that column's th and td; merged with table-level class-name props. */
   className?: string
   /** Omit from render; item data unchanged. */
   hidden?: boolean
+  /**
+   * Client-mode custom compare for this column. Return negative if `a` should
+   * come before `b` when sorting ascending; the table negates for desc.
+   * Ignored in server mode (parent owns sort).
+   */
+  sort?: HeaderSortCompare
   /** Nested group headers. Only leaves (no children) are body columns. */
   children?: Header[]
 }

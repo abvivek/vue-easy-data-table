@@ -32,6 +32,15 @@
         <slot
           v-if="slots['customize-headers']"
           name="customize-headers"
+          v-bind="{
+            headers: headersForRender,
+            headerRows,
+            updateSortField,
+            toggleSelectAll,
+            multipleSelectStatus,
+            isMultiSorting,
+            getMultiSortNumber,
+          }"
         />
         <thead
           v-else-if="headersForRender.length && !hideHeader"
@@ -74,7 +83,7 @@
               <span
                 v-else
                 class="header"
-                :class="`direction-${header.align || headerTextDirection}`"
+                :class="`direction-${header.headerAlign || header.align || headerTextDirection}`"
               >
                 <slot
                   v-if="slots[`header-${header.value}`]"
@@ -554,6 +563,7 @@ const {
   multiSort,
   itemKey,
   serverSelectAll,
+  headers,
   emits,
 );
 
@@ -743,8 +753,13 @@ const onSortableHeaderKeydown = (
 // template style generation function
 const getColStyle = (header: HeaderForRender): string | undefined => {
   const width = header.width ?? (fixedHeaders.value.length ? 100 : null);
-  if (width) return `width: ${width}px; min-width: ${width}px;`;
-  return undefined;
+  const minWidth = header.minWidth ?? width;
+  const { maxWidth } = header;
+  const parts: string[] = [];
+  if (width) parts.push(`width: ${width}px`);
+  if (minWidth) parts.push(`min-width: ${minWidth}px`);
+  if (maxWidth) parts.push(`max-width: ${maxWidth}px`);
+  return parts.length ? `${parts.join('; ')};` : undefined;
 };
 
 const fixedTableMinWidthStyle = computed(() => {

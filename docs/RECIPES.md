@@ -268,9 +268,29 @@ Also available: `#header`, `#header-{value}`, `#loading`, `#empty-message`, `#pa
 <script setup lang="ts">
 import type { Header, Item } from 'vue-easy-data-table';
 
+const parseDmy = (value: string) => {
+  const [day, month, year] = value.split('-').map(Number);
+  return new Date(year, month - 1, day).getTime();
+};
+
 const headers: Header[] = [
   { text: 'Name', value: 'name' },
-  { text: 'Age', value: 'age', align: 'right', className: 'age-col', sortable: true },
+  {
+    text: 'Age',
+    value: 'age',
+    align: 'right',
+    headerAlign: 'center',
+    minWidth: 80,
+    maxWidth: 120,
+    className: 'age-col',
+    sortable: true,
+  },
+  {
+    text: 'Joined',
+    value: 'joined',
+    sortable: true,
+    sort: (a, b) => parseDmy(a.joined) - parseDmy(b.joined),
+  },
   { text: 'Internal id', value: 'id', hidden: true },
   {
     text: 'Member info',
@@ -286,11 +306,13 @@ const items: Item[] = [/* … */];
 </script>
 ```
 
-- `align` / `className` apply to that column’s `<th>` and matching `<td>` (merged with table-level class-name props).
+- `align` applies to the matching `<td>`; `headerAlign` is header-only (falls back to `align`).
+- `minWidth` / `maxWidth` set `<col>` min/max (px). `width` still sets width + min-width when `minWidth` is omitted.
+- `sort` is a client-mode `(a, b) => number` compare (ignored in server mode).
 - `hidden` omits the column from render; the field remains on `items`.
 - Only **leaves** (no `children`) are body columns. Group parents are not sortable.
 - Do not mix `fixed: true` and unfixed children in one group — the table warns and treats the group as unfixed.
-- Prefer `children` over `#customize-headers` for groups. Use `#customize-headers` only when you need fully custom thead markup.
+- Prefer `children` over `#customize-headers` for groups. Use `#customize-headers` only when you need fully custom thead markup; it now receives `headers`, `updateSortField`, `toggleSelectAll`, and related helpers.
 
 ---
 

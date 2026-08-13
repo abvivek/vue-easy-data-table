@@ -1,4 +1,4 @@
-import type { SortType, TextDirection } from './main';
+import type { HeaderSortCompare, SortType, TextDirection } from './main';
 
 export type ServerOptionsComputed = {
   page: number
@@ -14,8 +14,12 @@ export type HeaderForRender = {
   sortType?: SortType | 'none'
   fixed?: Boolean
   width?: number
+  minWidth?: number
+  maxWidth?: number
   align?: TextDirection
+  headerAlign?: TextDirection
   className?: string
+  sort?: HeaderSortCompare
   colspan?: number
   rowspan?: number
   /** Group parent cell (not a body column). Sort is ignored. */

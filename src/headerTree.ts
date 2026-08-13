@@ -97,6 +97,18 @@ export function flattenLeaves(headers: Header[]): Header[] {
   ));
 }
 
+export function findLeafHeader(headers: Header[], value: string): Header | undefined {
+  for (const header of headers) {
+    if (isGroup(header)) {
+      const found = findLeafHeader(header.children ?? [], value);
+      if (found) return found;
+    } else if (header.value === value) {
+      return header;
+    }
+  }
+  return undefined;
+}
+
 export function buildHeaderRows(
   orderedTopLevel: Header[],
   synthetic: HeaderForRender[],
@@ -123,6 +135,7 @@ export function buildHeaderRows(
         value: header.value,
         fixed: allFixed,
         align: header.align,
+        headerAlign: header.headerAlign,
         className: header.className,
         colspan: leaves.length,
         rowspan: 1,
