@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.0-alpha.9
+
+Bugfix — `#customize-headers` + fixed columns:
+
+- Slot now also binds `getHeaderCellFixedStyle`, `getFixedDistance`, `lastFixedColumn`, and `fixedHeaders` so a custom thead can reuse painted sticky `left` / z-index (no consumer math).
+- Frozen custom `<th>` should use that style plus class `fixed-column` (and `shadow` on the last frozen leaf/group).
+- `.fixed-header th` stays vertically sticky (`z-index` 3); `th.fixed-column` wins at `z-index` 4 with an opaque header background, including custom thead markup that omits `vue3-easy-data-table__header`.
+
+See [MIGRATION.md](./MIGRATION.md) and [docs/API.md](./docs/API.md).
+
 ## 1.6.0-alpha.8
 
 Phase 6 — customizable table headers (additive):

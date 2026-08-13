@@ -46,13 +46,16 @@
     }
   }
   &.fixed-header {
+    /* Vertically sticky header cells (STICKY_HEADER_Z_INDEX). */
     th {
       position: sticky;
       top: 0;
       z-index: 3;
     }
+    /* Frozen corner wins over scrolling header th (FIXED_COLUMN_HEADER_Z_INDEX). */
     th.fixed-column {
       z-index: 4;
+      background-color: var(--easy-table-header-background-color);
     }
   }
   &.hoverable {
@@ -191,7 +194,8 @@ table {
   }
 }
 
-.vue3-easy-data-table__header th.fixed-column {
+.vue3-easy-data-table__header th.fixed-column,
+.vue3-easy-data-table__main th.fixed-column {
   background-color: var(--easy-table-header-background-color);
   z-index: 4;
 }

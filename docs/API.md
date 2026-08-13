@@ -182,7 +182,7 @@ type SortType = 'asc' | 'desc'
 | `pagination` | `{ isFirstPage, isLastPage, currentPaginationNumber, maxPaginationNumber, nextPage, prevPage }` | Replace default pagination controls. |
 | `loading` | — | Custom loading entity inside the loading mask. |
 | `empty-message` | — | Custom empty state (default uses `emptyMessage` prop). |
-| `customize-headers` | `{ headers, headerRows, updateSortField, toggleSelectAll, multipleSelectStatus, isMultiSorting, getMultiSortNumber }` | When present, replaces default `<thead>` entirely. Prefer `Header.children` for grouped headers. Slot props let a custom thead keep sort / select-all without copying internals. |
+| `customize-headers` | `{ headers, headerRows, updateSortField, toggleSelectAll, multipleSelectStatus, isMultiSorting, getMultiSortNumber, getHeaderCellFixedStyle, getFixedDistance, lastFixedColumn, fixedHeaders }` | When present, replaces default `<thead>` entirely. Prefer `Header.children` for grouped headers. Slot props let a custom thead keep sort / select-all / **fixed columns** without copying painted-width math. Frozen custom `<th>` must use `:style="getHeaderCellFixedStyle(header)"` plus class `fixed-column` (and `shadow` when it is the last fixed leaf/group). |
 
 Slot forwarding: `DataTableBodyRow` re-exposes parent slots, so `item-*` / `expand` / `item` work as documented in upstream feature docs.
 
@@ -261,6 +261,8 @@ Root defaults live in `DataTable.vue` `<style>` (`:root`). Stylesheets: `src/scs
 | `vue3-easy-data-table__main` | Scroll/body wrapper (`fixed-header`, `fixed-height`, `hoverable`, `border-cell`, …) |
 | `vue3-easy-data-table__header` / `__body` / `__footer` | Sections |
 | `sortable` / `asc` / `desc` / `none` | Sortable `<th>` |
+| `fixed-column` | Frozen `<th>` / `<td>` (`position: sticky` + painted `left`). Custom `#customize-headers` cells must add this class. |
+| `shadow` | Last frozen cell (inset shadow when the table is scrolled horizontally). |
 | `expand-icon` / `expanding` | Expand control |
 | `easy-checkbox` | Checkbox UI (see checkbox SCSS) |
 | `previous-page__click-button` / `next-page__click-button` | Pagination arrows |
@@ -307,4 +309,4 @@ Additive attributes/keyboard only — class names unchanged. Sortable headers: `
 
 ### Grouped headers (1.6.0-alpha.8+)
 
-`Header.children` builds multi-row `<thead>` (group parents + leaf columns). `#header-{value}`, lowercase, and `#header` slots apply to group parent cells as well as leaves. Sort UI stays on sortable **leaves** only. `#customize-headers` still replaces the entire thead when you need markup the tree cannot express.
+`Header.children` builds multi-row `<thead>` (group parents + leaf columns). `#header-{value}`, lowercase, and `#header` slots apply to group parent cells as well as leaves. Sort UI stays on sortable **leaves** only. `#customize-headers` still replaces the entire thead when you need markup the tree cannot express. For frozen columns in that slot, apply `getHeaderCellFixedStyle(header)` and class `fixed-column` (see recipes).
