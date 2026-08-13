@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.0
+
+First stable release of the `vue-easy-data-table` fork. Drop-in compatible with `vue3-easy-data-table` 1.5.x; new APIs are additive.
+
+- **Package**: renamed from `vue3-easy-data-table`; Vue is a peer (`^3.4.0 || ^3.5.0`); Vite 6 / Vitest 3 toolchain.
+- **Correctness**: numeric sort, null-safe search, pagination / `currentPage` sync, packaging `exports`, expand-row index + `expandable`.
+- **`item-key`**: optional stable row identity for selection / expand / virtual (omit for legacy `JSON.stringify`).
+- **Virtual rows**: opt-in `virtual` + `virtual-row-height` (windows the current page).
+- **Server DX**: footer page tracks `serverOptions.page`; custom `serverOptions` fields preserved; `server-select-all`.
+- **Accessibility**: `aria-sort`, labeled checkboxes / pagination / expand, keyboard sort, `aria-busy`.
+- **Headers**: `align` / `headerAlign` / `className` / `hidden` / `children` (grouped thead); `#customize-headers` keeps sort / select-all / fixed columns.
+- **Sticky columns**: painted-width `left`, opaque backgrounds, and stacking so scrolling cells cannot paint through frozen ones (including custom thead).
+
+See [MIGRATION.md](./MIGRATION.md) and [docs/API.md](./docs/API.md).
+
 ## 1.6.0-alpha.9
 
 Bugfix — `#customize-headers` + fixed columns:

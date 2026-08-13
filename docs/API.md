@@ -303,10 +303,10 @@ When `server-options` is non-`null`:
 - With `item-key`: identity via key/`Set`. Without: deep/`JSON.stringify`-style matching (legacy).
 - Server `'page'` vs `'all'`: see `server-select-all` and [MIGRATION.md](../MIGRATION.md).
 
-### Accessibility (1.6.0-alpha.6+)
+### Accessibility (1.6.0+)
 
 Additive attributes/keyboard only — class names unchanged. Sortable headers: `aria-sort`, focusable, Enter/Space. Checkboxes/pagination/expand: accessible names and ARIA. Loading: `aria-busy` on table. Custom slots that replace controls should keep their own accessible names.
 
-### Grouped headers (1.6.0-alpha.8+)
+### Grouped headers (1.6.0+)
 
 `Header.children` builds multi-row `<thead>` (group parents + leaf columns). `#header-{value}`, lowercase, and `#header` slots apply to group parent cells as well as leaves. Sort UI stays on sortable **leaves** only. `#customize-headers` still replaces the entire thead when you need markup the tree cannot express. For frozen columns in that slot, apply `getHeaderCellFixedStyle(header)` and class `fixed-column` (see recipes).
