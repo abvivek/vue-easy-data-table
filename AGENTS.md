@@ -64,7 +64,8 @@ Source of truth for defaults: `src/propsWithDefault.ts` + required `headers` / `
 | Selection never appears | Selection requires `v-model:items-selected` (non-`null`); `null` disables checkboxes |
 | Expecting client search in server mode | Search/filter are client-only; send criteria in `serverOptions` custom fields |
 | Grouped headers mixing `fixed` and unfixed children | Make every visible leaf `fixed: true`, or none; mixed groups warn and are treated as unfixed |
-| Reaching for `#customize-headers` just to group columns | Prefer `Header.children`; `#customize-headers` still replaces the entire thead |
+| Reaching for `#customize-headers` just to group columns | Prefer `Header.children`; `#customize-headers` still replaces the entire thead (now binds `updateSortField` / `toggleSelectAll` if you need a fully custom thead) |
+| Custom date/order sort looking wrong | Set `Header.sort` `(a, b) => number` in **client** mode; server mode must sort on the parent |
 
 ## Testing commands (this repo)
 
