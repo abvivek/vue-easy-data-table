@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.1
+
+Docs — README rewrite for the stable 1.6 line (install, migration, features). No runtime change.
+
 ## 1.6.0
 
 First stable release of the `vue-easy-data-table` fork. Drop-in compatible with `vue3-easy-data-table` 1.5.x; new APIs are additive.

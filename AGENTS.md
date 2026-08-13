@@ -82,4 +82,4 @@ Full local benches (not CI-gated on timings): `npm run bench`.
 
 ## Versioning
 
-Current line is **`1.6.0`** (see `package.json`). Public API is drop-in compatible with upstream 1.5.x; 1.6.x adds `item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, and `#customize-headers` sticky helpers.
+Current line is **`1.6.1`** (see `package.json`). Public API is drop-in compatible with upstream 1.5.x; 1.6.x adds `item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, and `#customize-headers` sticky helpers.
