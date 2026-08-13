@@ -45,25 +45,6 @@
       @update-total-items="updateTotalItems"
       show-index-symbol="$"
     >
-     <!-- <template #customize-headers>
-        <thead class="my-static-header">
-          <tr>
-            <th colspan="3" rowspan="2"></th>
-            <th colspan="4">member info</th>
-            <th colspan="4">indicator</th>
-          </tr>
-          <tr>
-            <th>name</th>
-            <th>team</th>
-            <th>number</th>
-            <th>position</th>
-            <th>height</th>
-            <th>weight</th>
-            <th>lastAttended</th>
-            <th>country</th>
-          </tr>
-        </thead>
-      </template> -->
       <template #expand="item">
         <div style="padding: 15px">
           {{ item.name }} won championships
@@ -138,14 +119,26 @@ const switchToNested = () => {
   items.value = mockClientNestedItems(100);
 };
 const headers: Header[] = [
-  { text: "Name", value: "name" },
-  { text: "TEAM", value: "team"},
-  { text: "NUMBER", value: "number", sortable: true},
-  { text: "POSITION", value: "position"},
-  { text: "HEIGHT", value: "indicator.height"},
-  { text: "WEIGHT (lbs)", value: "indicator.weight", sortable: true},
-  { text: "LAST ATTENDED", value: "lastAttended", width: 200},
-  { text: "COUNTRY", value: "country"},
+  { text: 'Name', value: 'name' },
+  {
+    text: 'Member info',
+    value: 'member-info',
+    children: [
+      { text: 'TEAM', value: 'firstName' },
+      { text: 'NUMBER', value: 'number', sortable: true },
+      { text: 'POSITION', value: 'position' },
+    ],
+  },
+  {
+    text: 'Indicator',
+    value: 'indicator-group',
+    children: [
+      { text: 'HEIGHT', value: 'indicator.height' },
+      { text: 'WEIGHT (lbs)', value: 'indicator.weight', sortable: true },
+      { text: 'LAST ATTENDED', value: 'lastAttended', width: 200 },
+      { text: 'COUNTRY', value: 'country' },
+    ],
+  },
 ];
 
 // const headers: Header[] = headersMocked;

@@ -47,7 +47,7 @@ Types (`Header`, `Item`, `ServerOptions`, …) come from the package root / `typ
 | [docs/API.md](./docs/API.md) | Full props / slots / emits / expose / CSS vars |
 | [docs/RECIPES.md](./docs/RECIPES.md) | Copy-paste Vue 3 SFC patterns |
 | [types/main.d.ts](./types/main.d.ts) | Published TypeScript types |
-| [MIGRATION.md](./MIGRATION.md) | Rename + Phase 1–5 additive behavior |
+| [MIGRATION.md](./MIGRATION.md) | Rename + Phase 1–6 additive behavior |
 | [CHANGELOG.md](./CHANGELOG.md) | Release notes by alpha |
 | [docs/BENCHMARKS.md](./docs/BENCHMARKS.md) | Perf notes (`item-key`, benches) |
 
@@ -63,6 +63,8 @@ Source of truth for defaults: `src/propsWithDefault.ts` + required `headers` / `
 | Missing styles | Import `vue-easy-data-table/dist/style.css` (not a guessed path) |
 | Selection never appears | Selection requires `v-model:items-selected` (non-`null`); `null` disables checkboxes |
 | Expecting client search in server mode | Search/filter are client-only; send criteria in `serverOptions` custom fields |
+| Grouped headers mixing `fixed` and unfixed children | Make every visible leaf `fixed: true`, or none; mixed groups warn and are treated as unfixed |
+| Reaching for `#customize-headers` just to group columns | Prefer `Header.children`; `#customize-headers` still replaces the entire thead |
 
 ## Testing commands (this repo)
 
@@ -78,4 +80,4 @@ Full local benches (not CI-gated on timings): `npm run bench`.
 
 ## Versioning
 
-Current line is **`1.6.0-alpha.*`** (see `package.json`). Alphas/RCs ship additive Phase work (identity, virtual, server DX, a11y) before a stable 1.6.0. Prefer latest alpha when documenting or consuming fork-only APIs (`item-key`, `virtual*`, `server-select-all`, a11y).
+Current line is **`1.6.0-alpha.*`** (see `package.json`). Alphas/RCs ship additive Phase work (identity, virtual, server DX, a11y, header `align`/`className`/`hidden`/`children`) before a stable 1.6.0. Prefer latest alpha when documenting or consuming fork-only APIs (`item-key`, `virtual*`, `server-select-all`, a11y, grouped headers).

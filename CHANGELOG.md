@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.0-alpha.8
+
+Phase 6 — customizable table headers (additive):
+
+- **`Header.align`**: per-column text direction on `<th>` and matching `<td>` (falls back to `header-text-direction` / `body-text-direction`).
+- **`Header.className`**: extra class on that column’s `<th>` and `<td>`, merged with table-level class-name props.
+- **`Header.hidden`**: omit a column from render without changing item data.
+- **`Header.children`**: nested group headers (multi-row `<thead>`). Only leaves are body columns. Sort stays on sortable leaves.
+- **Fixed groups**: a group is sticky only when every visible leaf is `fixed: true`. Mixed fixed/unfixed children warn and are treated as unfixed.
+- **No mutation**: sorting no longer writes `sortType` onto consumer `Header` objects.
+- **Sticky measurement**: painted widths follow leaf columns (`colgroup` / `data-leaf-column`), not group parent `<th>` cells.
+- `#customize-headers` still replaces thead; prefer `children` for grouped headers.
+
+See [MIGRATION.md](./MIGRATION.md) and [docs/API.md](./docs/API.md).
+
 ## 1.6.0-alpha.7
 
 Bugfix — sticky/fixed columns overlapping scrolling cells:

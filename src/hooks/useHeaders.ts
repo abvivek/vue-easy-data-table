@@ -5,6 +5,15 @@ import type { Header, SortType } from '../types/main';
 import type {
   ServerOptionsComputed, HeaderForRender, ClientSortOptions, EmitsEventName,
 } from '../types/internal';
+import {
+  cloneHeader,
+  filterHiddenHeaders,
+  flattenLeaves,
+  maxDepth,
+  normalizeGroupFixed,
+  partitionFixedTopLevel,
+  buildHeaderRows,
+} from '../headerTree';
 
 export default function useHeaders(
   showIndexSymbol: Ref<string>,
@@ -27,14 +36,25 @@ export default function useHeaders(
   updateServerOptionsSort: (newSortBy: string, newSortType: SortType | null) => void,
   emits: (event: EmitsEventName, ...args: any[]) => void,
 ) {
-  const hasFixedColumnsFromUser = computed(() => headers.value.findIndex((header) => header.fixed) !== -1);
-  const fixedHeadersFromUser = computed(() => {
-    if (hasFixedColumnsFromUser.value) return headers.value.filter((header) => header.fixed);
-    return [];
-  });
-  const unFixedHeaders = computed(() => headers.value.filter((header) => !header.fixed));
+  const mixedFixedWarnedGroups = new Set<string>();
 
-   
+  const warnMixedFixed = (msg: string) => {
+    if (mixedFixedWarnedGroups.has(msg)) return;
+    mixedFixedWarnedGroups.add(msg);
+    console.warn(msg);
+  };
+
+  const orderedTopLevel = computed((): Header[] => {
+    const cloned = headers.value.map(cloneHeader);
+    const visible = filterHiddenHeaders(cloned);
+    const normalized = visible.map((header) => normalizeGroupFixed(header, warnMixedFixed));
+    return partitionFixedTopLevel(normalized);
+  });
+
+  const hasFixedColumnsFromUser = computed(() => (
+    flattenLeaves(orderedTopLevel.value).some((header) => header.fixed)
+  ));
+
   const generateClientSortOptions = (sortByValue: string | string[], sortTypeValue: SortType | SortType[]): ClientSortOptions | null => {
     // multi sort
     if (Array.isArray(sortByValue) && Array.isArray(sortTypeValue)) {
@@ -55,74 +75,73 @@ export default function useHeaders(
 
   const clientSortOptions = ref<ClientSortOptions | null>(generateClientSortOptions(sortBy.value, sortType.value));
 
-  // headers for render (integrating sortType,z checkbox...)
-  const headersForRender = computed((): HeaderForRender[] => {
-    // fixed order
-    const fixedHeaders = [...fixedHeadersFromUser.value,
-      ...unFixedHeaders.value] as HeaderForRender[];
-    // sorting
-    const headersSorting: HeaderForRender[] = fixedHeaders.map((header: HeaderForRender) => {
-      const headerSorting: HeaderForRender = Object.assign(header);
+  const applySortToLeaf = (header: Header): HeaderForRender => {
+    const { children, hidden, ...rest } = header;
+    const headerSorting: HeaderForRender = { ...rest };
 
-      if (headerSorting.sortable) headerSorting.sortType = 'none';
+    if (headerSorting.sortable) headerSorting.sortType = 'none';
 
-      // server mode
-      if (serverOptionsComputed.value) {
-        if (Array.isArray(serverOptionsComputed.value.sortBy) && Array.isArray(serverOptionsComputed.value.sortType)
-        && serverOptionsComputed.value.sortBy.includes(headerSorting.value)) {
-          // multi sort
-          const index = serverOptionsComputed.value.sortBy.indexOf(headerSorting.value);
-          headerSorting.sortType = serverOptionsComputed.value.sortType[index];
-        } else if (headerSorting.value === serverOptionsComputed.value.sortBy && serverOptionsComputed.value.sortType) {
-          // single sort
-          headerSorting.sortType = serverOptionsComputed.value.sortType as SortType;
-        }
-      }
-
-      // client mode
-      // multi sort
-       
-      if (clientSortOptions.value && Array.isArray(clientSortOptions.value.sortBy) && Array.isArray(clientSortOptions.value.sortDesc)
-      && clientSortOptions.value.sortBy.includes(headerSorting.value)) {
-        const index = clientSortOptions.value.sortBy.indexOf(headerSorting.value);
-        headerSorting.sortType = clientSortOptions.value.sortDesc[index] ? 'desc' : 'asc';
-      } else if (clientSortOptions.value && headerSorting.value === clientSortOptions.value.sortBy) {
+    // server mode
+    if (serverOptionsComputed.value) {
+      if (Array.isArray(serverOptionsComputed.value.sortBy) && Array.isArray(serverOptionsComputed.value.sortType)
+      && serverOptionsComputed.value.sortBy.includes(headerSorting.value)) {
+        // multi sort
+        const index = serverOptionsComputed.value.sortBy.indexOf(headerSorting.value);
+        headerSorting.sortType = serverOptionsComputed.value.sortType[index];
+      } else if (headerSorting.value === serverOptionsComputed.value.sortBy && serverOptionsComputed.value.sortType) {
         // single sort
-        headerSorting.sortType = clientSortOptions.value.sortDesc ? 'desc' : 'asc';
+        headerSorting.sortType = serverOptionsComputed.value.sortType as SortType;
       }
-      return headerSorting;
-    });
-    // expand icon
-    let headersWithExpand: HeaderForRender[] = [];
-    if (!ifHasExpandSlot.value) {
-      headersWithExpand = headersSorting;
-    } else {
-      const headerExpand: HeaderForRender = (fixedExpand.value || hasFixedColumnsFromUser.value) ? {
-        text: '', value: 'expand', fixed: true, width: expandColumnWidth.value,
-      } : { text: '', value: 'expand' };
-      headersWithExpand = [headerExpand, ...headersSorting];
     }
-    // show index
-    let headersWithIndex: HeaderForRender[] = [];
-    if (!showIndex.value) {
-      headersWithIndex = headersWithExpand;
-    } else {
-      const headerIndex: HeaderForRender = (fixedIndex.value || hasFixedColumnsFromUser.value) ? {
-        text: showIndexSymbol.value, value: 'index', fixed: true, width: indexColumnWidth.value,
-      } : { text: showIndexSymbol.value, value: 'index' };
-      headersWithIndex = [headerIndex, ...headersWithExpand];
+
+    // client mode
+    // multi sort
+    if (clientSortOptions.value && Array.isArray(clientSortOptions.value.sortBy) && Array.isArray(clientSortOptions.value.sortDesc)
+    && clientSortOptions.value.sortBy.includes(headerSorting.value)) {
+      const index = clientSortOptions.value.sortBy.indexOf(headerSorting.value);
+      headerSorting.sortType = clientSortOptions.value.sortDesc[index] ? 'desc' : 'asc';
+    } else if (clientSortOptions.value && headerSorting.value === clientSortOptions.value.sortBy) {
+      // single sort
+      headerSorting.sortType = clientSortOptions.value.sortDesc ? 'desc' : 'asc';
     }
-    // checkbox
-    let headersWithCheckbox: HeaderForRender[] = [];
-    if (!isMultipleSelectable.value) {
-      headersWithCheckbox = headersWithIndex;
-    } else {
-      const headerCheckbox: HeaderForRender = (fixedCheckbox.value || hasFixedColumnsFromUser.value) ? {
-        text: 'checkbox', value: 'checkbox', fixed: true, width: checkboxColumnWidth.value ?? 36,
-      } : { text: 'checkbox', value: 'checkbox' };
-      headersWithCheckbox = [headerCheckbox, ...headersWithIndex];
+    return headerSorting;
+  };
+
+  const syntheticHeaders = computed((): HeaderForRender[] => {
+    const synthetics: HeaderForRender[] = [];
+    if (isMultipleSelectable.value) {
+      synthetics.push(
+        (fixedCheckbox.value || hasFixedColumnsFromUser.value) ? {
+          text: 'checkbox', value: 'checkbox', fixed: true, width: checkboxColumnWidth.value ?? 36,
+        } : { text: 'checkbox', value: 'checkbox' },
+      );
     }
-    return headersWithCheckbox;
+    if (showIndex.value) {
+      synthetics.push(
+        (fixedIndex.value || hasFixedColumnsFromUser.value) ? {
+          text: showIndexSymbol.value, value: 'index', fixed: true, width: indexColumnWidth.value,
+        } : { text: showIndexSymbol.value, value: 'index' },
+      );
+    }
+    if (ifHasExpandSlot.value) {
+      synthetics.push(
+        (fixedExpand.value || hasFixedColumnsFromUser.value) ? {
+          text: '', value: 'expand', fixed: true, width: expandColumnWidth.value,
+        } : { text: '', value: 'expand' },
+      );
+    }
+    return synthetics;
+  });
+
+  const headersForRender = computed((): HeaderForRender[] => {
+    const leaves = flattenLeaves(orderedTopLevel.value).map(applySortToLeaf);
+    return [...syntheticHeaders.value, ...leaves];
+  });
+
+  const headerRows = computed((): HeaderForRender[][] => {
+    const depth = maxDepth(orderedTopLevel.value);
+    if (depth <= 1) return [headersForRender.value];
+    return buildHeaderRows(orderedTopLevel.value, syntheticHeaders.value, applySortToLeaf);
   });
 
   const headerColumns = computed((): string[] => headersForRender.value.map((header) => header.value));
@@ -195,6 +214,7 @@ export default function useHeaders(
     clientSortOptions,
     headerColumns,
     headersForRender,
+    headerRows,
     updateSortField,
     isMultiSorting,
     getMultiSortNumber,

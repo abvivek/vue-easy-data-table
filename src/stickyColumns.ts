@@ -83,14 +83,29 @@ export function computeStickyDistances(paintedWidths: number[]): number[] {
 }
 
 /**
- * Read painted column widths from header cells, or the first body row
+ * Read painted column widths from leaf header cells, or the first body row
  * when the header is hidden.
+ *
+ * Grouped headers add extra parent `<th>` cells; widths must follow body
+ * columns (`colgroup col`, then `th[data-leaf-column]`, then body `td`).
  */
 export function readPaintedColumnWidths(tableRoot: HTMLElement): number[] {
+  const cols = tableRoot.querySelectorAll<HTMLElement>('colgroup col');
+  if (cols.length > 0) {
+    const widths = Array.from(cols, (el) => el.offsetWidth);
+    if (widths.some((width) => width > 0)) return widths;
+  }
+
+  const leafCells = tableRoot.querySelectorAll<HTMLElement>('.vue3-easy-data-table__header th[data-leaf-column]');
+  if (leafCells.length > 0) {
+    return Array.from(leafCells, (el) => el.offsetWidth);
+  }
+
   const headerCells = tableRoot.querySelectorAll<HTMLElement>('.vue3-easy-data-table__header th');
   if (headerCells.length > 0) {
     return Array.from(headerCells, (el) => el.offsetWidth);
   }
+
   const rows = tableRoot.querySelectorAll('.vue3-easy-data-table__body tr');
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i];

@@ -15,8 +15,7 @@
         'shadow': column === lastFixedColumn,
         'fixed-column': Boolean(getFixedDistance(column, 'td')),
         'can-expand': column === 'expand' && isRowExpandable(item),
-      // eslint-disable-next-line max-len
-      }, typeof bodyItemClassName === 'string' ? bodyItemClassName : bodyItemClassName(column, index + 1), `direction-${bodyTextDirection}`]"
+      }, typeof bodyItemClassName === 'string' ? bodyItemClassName : bodyItemClassName(column, index + 1), `direction-${headerMetaByValue[column]?.align || bodyTextDirection}`, headerMetaByValue[column]?.className]"
       @click="(column === 'expand' && isRowExpandable(item)) ? updateExpandingItemIndexList(index + prevPageEndIndex, item, $event) : null"
     >
       <slot
@@ -83,7 +82,7 @@ import { useSlots, computed, type PropType, type CSSProperties } from 'vue';
 import SingleSelectCheckBox from './SingleSelectCheckBox.vue';
 import LoadingLine from './LoadingLine.vue';
 import type { Item, BodyItemClassNameFunction, BodyRowClassNameFunction, TextDirection } from '../types/main';
-import type { ClickEventType } from '../types/internal';
+import type { ClickEventType, HeaderForRender } from '../types/internal';
 import { generateColumnContent } from '../utils';
 
 const props = defineProps({
@@ -99,6 +98,10 @@ const props = defineProps({
   headerColumns: {
     type: Array as PropType<string[]>,
     required: true,
+  },
+  headersForRender: {
+    type: Array as PropType<HeaderForRender[]>,
+    default: () => [],
   },
   headersForRenderLength: {
     type: Number,
@@ -172,6 +175,14 @@ const props = defineProps({
 });
 
 const slots = useSlots();
+
+const headerMetaByValue = computed((): Record<string, HeaderForRender> => {
+  const map: Record<string, HeaderForRender> = {};
+  for (const header of props.headersForRender) {
+    map[header.value] = header;
+  }
+  return map;
+});
 
 const rowStyle = computed(() => {
   if (props.rowHeight == null || props.rowHeight <= 0) return undefined;

@@ -222,3 +222,34 @@ Sticky `left` previously summed configured `header.width` only. With `table-layo
 Right-side frozen columns are still not implemented. Deep RTL sticky (`left` vs `right`) is still deferred.
 
 If you overrode sticky `left` / `z-index` in app CSS, drop those workarounds — the library now measures painted widths.
+
+### Additive (Phase 6) — customizable headers
+
+No breaking API. New optional `Header` fields; omit them for identical single-row thead/body behavior.
+
+| Field | Effect |
+| --- | --- |
+| `align` | Per-column text direction on `<th>` + matching `<td>` (else `header-text-direction` / `body-text-direction`) |
+| `className` | Extra class on that column’s `<th>` and `<td>` (merged with table-level class-name props) |
+| `hidden` | Skip rendering the column; item data is unchanged |
+| `children` | Nested group headers. Only leaves are body columns |
+
+```ts
+const headers: Header[] = [
+  { text: 'Name', value: 'name', sortable: true },
+  {
+    text: 'Member info',
+    value: 'member-info',
+    children: [
+      { text: 'Team', value: 'team' },
+      { text: 'Number', value: 'number', sortable: true },
+    ],
+  },
+];
+```
+
+**`fixed` + groups:** a group is sticky only if **all** visible leaves are `fixed: true`. Mixing fixed and unfixed children warns and treats the group as unfixed.
+
+**`#customize-headers`** still replaces the entire `<thead>`. Prefer `children` for grouped headers; keep the slot for fully custom markup.
+
+CSS class hooks (`vue3-easy-data-table__header`, `sortable`, `direction-*`) are unchanged. Sort still lives on sortable leaves, not group parent cells.
