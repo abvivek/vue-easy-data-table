@@ -5,13 +5,14 @@
  * grouped headers, no consumer mutation, sticky leaf measurement.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { nextTick } from 'vue';
+import { h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import DataTable from '../src/components/DataTable.vue';
 import { readPaintedColumnWidths } from '../src/stickyColumns';
 import {
   cloneHeader,
   filterHiddenHeaders,
+  findLeafHeader,
   flattenLeaves,
   maxDepth,
   normalizeGroupFixed,
@@ -456,5 +457,153 @@ describe('Phase 6 sticky leaf measurement', () => {
     expect(readPaintedColumnWidths(root)).toEqual([40, 50, 60]);
     expect(readPaintedColumnWidths(root)).toHaveLength(3);
     expect(root.querySelectorAll('thead th')).toHaveLength(4);
+  });
+});
+
+describe('Phase 6 headerAlign / minWidth / maxWidth / sort / customize-headers', () => {
+  it('findLeafHeader walks grouped trees', () => {
+    const found = findLeafHeader(groupedHeaders, 'number');
+    expect(found?.text).toBe('Number');
+    expect(findLeafHeader(groupedHeaders, 'missing')).toBeUndefined();
+  });
+
+  it('uses headerAlign on th and align on td independently', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Age', value: 'age', align: 'right', headerAlign: 'center' },
+        ],
+        items,
+        rowsPerPage: 10,
+      },
+    });
+    await nextTick();
+
+    const ageTh = wrapper.findAll('thead th').find((th) => th.text().includes('Age'));
+    expect(ageTh.find('.header').classes()).toContain('direction-center');
+    expect(wrapper.findAll('tbody tr')[0].findAll('td')[1].classes()).toContain('direction-right');
+
+    wrapper.unmount();
+  });
+
+  it('applies minWidth and maxWidth on col styles', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name', minWidth: 120 },
+          { text: 'Age', value: 'age', width: 80, maxWidth: 90 },
+        ],
+        items,
+        rowsPerPage: 10,
+      },
+    });
+    await nextTick();
+
+    const cols = wrapper.findAll('col');
+    expect(cols[0].attributes('style')).toMatch(/min-width:\s*120px/);
+    expect(cols[1].attributes('style')).toMatch(/width:\s*80px/);
+    expect(cols[1].attributes('style')).toMatch(/max-width:\s*90px/);
+
+    wrapper.unmount();
+  });
+
+  it('uses Header.sort for client-mode date-like order', async () => {
+    const parseDmy = (value) => {
+      const [day, month, year] = String(value).split('-').map(Number);
+      return new Date(year, month - 1, day).getTime();
+    };
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'NAME', value: 'name' },
+          {
+            text: 'DATE',
+            value: 'date',
+            sortable: true,
+            sort: (a, b) => parseDmy(a.date) - parseDmy(b.date),
+          },
+        ],
+        items: [
+          { name: 'feb', date: '01-02-2020' },
+          { name: 'jan', date: '15-01-2020' },
+          { name: 'mar', date: '01-03-2020' },
+        ],
+        rowsPerPage: 10,
+        sortBy: 'date',
+        sortType: 'asc',
+      },
+    });
+    await nextTick();
+
+    const names = wrapper.findAll('tbody tr').map((tr) => tr.findAll('td').at(0).text());
+    expect(names).toEqual(['jan', 'feb', 'mar']);
+
+    wrapper.unmount();
+  });
+
+  it('binds sort helpers on #customize-headers', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name', sortable: true },
+          { text: 'Age', value: 'age' },
+        ],
+        items: [
+          { name: 'Bob', age: 28 },
+          { name: 'Ada', age: 36 },
+        ],
+        rowsPerPage: 10,
+      },
+      slots: {
+        'customize-headers': (props) => h('thead', { class: 'custom-thead' }, [
+          h('tr', (props.headers || []).map((header) => h('th', {
+            class: { sortable: header.sortable },
+            onClick: header.sortable
+              ? () => props.updateSortField(header.value, header.sortType || 'none')
+              : undefined,
+          }, header.text))),
+        ]),
+      },
+    });
+    await nextTick();
+
+    expect(wrapper.find('thead.custom-thead').exists()).toBe(true);
+
+    const nameTh = wrapper.findAll('thead th').find((th) => th.text().includes('Name'));
+    await nameTh.trigger('click');
+    await nextTick();
+
+    const names = wrapper.findAll('tbody tr').map((tr) => tr.findAll('td').at(0).text());
+    expect(names).toEqual(['Ada', 'Bob']);
+
+    wrapper.unmount();
+  });
+
+  it('exposes toggleSelectAll on #customize-headers when selectable', async () => {
+    let slotProps;
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [{ text: 'Name', value: 'name' }],
+        items,
+        itemsSelected: [],
+        rowsPerPage: 10,
+      },
+      slots: {
+        'customize-headers': (props) => {
+          slotProps = props;
+          return h('thead', [h('tr', [h('th', 'custom')])]);
+        },
+      },
+    });
+    await nextTick();
+
+    expect(typeof slotProps.updateSortField).toBe('function');
+    expect(typeof slotProps.toggleSelectAll).toBe('function');
+    expect(slotProps.multipleSelectStatus).toBeTruthy();
+    expect(Array.isArray(slotProps.headers)).toBe(true);
+    expect(Array.isArray(slotProps.headerRows)).toBe(true);
+
+    wrapper.unmount();
   });
 });

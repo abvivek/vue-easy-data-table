@@ -1,12 +1,13 @@
 import {
   Ref, computed, ComputedRef, watch,
 } from 'vue';
-import type { Item, FilterOption, ServerSelectAll } from '../types/main';
+import type { Header, Item, FilterOption, ServerSelectAll } from '../types/main';
 import type { ClientSortOptions, EmitsEventName } from '../types/internal';
 import {
   getItemValue, escapeRegExp, toSearchString, compareValues,
   itemsMatch, getItemIdentity, buildIdentitySet,
 } from '../utils';
+import { findLeafHeader } from '../headerTree';
 
 export default function useTotalItems(
   clientSortOptions: Ref<ClientSortOptions | null>,
@@ -20,6 +21,7 @@ export default function useTotalItems(
   multiSort: Ref<boolean>,
   itemKey: Ref<string>,
   serverSelectAll: Ref<ServerSelectAll>,
+  headers: Ref<Header[]>,
   emits: (event: EmitsEventName, ...args: any[]) => void,
 ) {
   const generateSearchingTarget = (item: Item): string => {
@@ -89,6 +91,21 @@ export default function useTotalItems(
     }
   }, { immediate: true, deep: true });
 
+  const compareColumn = (sortBy: string, a: Item, b: Item): number => {
+    const custom = findLeafHeader(headers.value, sortBy)?.sort;
+    if (typeof custom === 'function') {
+      const compared = custom(a, b);
+      return Number.isFinite(compared) ? compared : 0;
+    }
+    return compareValues(getItemValue(sortBy, a), getItemValue(sortBy, b));
+  };
+
+  const applySortDirection = (compared: number, sortDesc: boolean): number => {
+    if (compared < 0) return sortDesc ? 1 : -1;
+    if (compared > 0) return sortDesc ? -1 : 1;
+    return 0;
+  };
+
   function recursionMuiltSort(sortByArr: string[], sortDescArr: boolean[], itemsToSort: Item[], index: number): Item[] {
     const sortBy = sortByArr[index];
     const sortDesc = sortDescArr[index];
@@ -99,16 +116,13 @@ export default function useTotalItems(
     return [...base].sort((a: Item, b: Item) => {
       let isAllSame = true;
       for (let i = 0; i < index; i += 1) {
-        if (getItemValue(sortByArr[i], a) !== getItemValue(sortByArr[i], b)) {
+        if (compareColumn(sortByArr[i], a, b) !== 0) {
           isAllSame = false;
           break;
         }
       }
       if (isAllSame) {
-        const compared = compareValues(getItemValue(sortBy as string, a), getItemValue(sortBy as string, b));
-        if (compared < 0) return sortDesc ? 1 : -1;
-        if (compared > 0) return sortDesc ? -1 : 1;
-        return 0;
+        return applySortDirection(compareColumn(sortBy as string, a, b), sortDesc);
       }
       return 0;
     });
@@ -127,12 +141,9 @@ export default function useTotalItems(
       return recursionMuiltSort(sortBy, sortDesc, itemsFilteringSorted, sortBy.length - 1);
     }
 
-    return [...itemsFilteringSorted].sort((a, b) => {
-      const compared = compareValues(getItemValue(sortBy as string, a), getItemValue(sortBy as string, b));
-      if (compared < 0) return sortDesc ? 1 : -1;
-      if (compared > 0) return sortDesc ? -1 : 1;
-      return 0;
-    });
+    return [...itemsFilteringSorted].sort((a, b) => (
+      applySortDirection(compareColumn(sortBy as string, a, b), sortDesc as boolean)
+    ));
   });
 
   const totalItemsLength = computed((): number => (isServerSideMode.value ? serverItemsLength.value : totalItems.value.length));

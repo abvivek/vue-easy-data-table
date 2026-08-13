@@ -16,30 +16,35 @@ Component: default + named export **`Vue3EasyDataTable`**. Consumers often regis
 ### `Header`
 
 ```ts
+type HeaderSortCompare = (a: Item, b: Item) => number
+
 type Header = {
   text: string
   value: string
   sortable?: boolean
   fixed?: boolean
   width?: number
-  /** Per-column text align for th + matching td. Falls back to header/body text-direction props. */
+  minWidth?: number
+  maxWidth?: number
   align?: TextDirection
-  /** Extra class on that column's th and td; merged with table-level class-name props. */
+  headerAlign?: TextDirection
   className?: string
-  /** Omit from render; item data unchanged. */
   hidden?: boolean
-  /** Nested group headers. Only leaves (no children) are body columns. */
+  sort?: HeaderSortCompare
   children?: Header[]
 }
 ```
 
-Omitting the new fields (`align`, `className`, `hidden`, `children`) keeps the same single-row thead and body columns as before.
+Omitting the new fields keeps the same single-row thead and body columns as before.
 
 | Field | Notes |
 | --- | --- |
-| `align` | `'left' \| 'center' \| 'right'` on that column’s `<th>` and matching `<td>`. Falls back to `header-text-direction` / `body-text-direction`. |
+| `align` | `'left' \| 'center' \| 'right'` on that column’s matching `<td>` (and `<th>` unless `headerAlign` is set). Falls back to `body-text-direction` / `header-text-direction`. |
+| `headerAlign` | Header-only align. Falls back to `align`, then `header-text-direction`. Use for a centered title over right-aligned numbers. |
+| `minWidth` / `maxWidth` | Column `<col>` min/max width in px. `width` still sets both width and min-width when `minWidth` is omitted. |
 | `className` | Extra class on that column’s `<th>` and `<td>`, merged with `header-item-class-name` / `body-item-class-name`. |
 | `hidden` | Column is not rendered. Item objects are unchanged (the field is still on the row). |
+| `sort` | Client-mode custom compare `(a, b) => number` (negative if `a` precedes `b` when ascending). The table negates for desc. **Ignored in server mode.** |
 | `children` | Nested group headers. **Only leaves** (no `children`, or empty `children`) become body columns. Prefer `children` over `#customize-headers` for grouped headers. |
 
 **Grouped + `fixed`:** a group is sticky only when **every** visible leaf has `fixed: true`. Mixing `fixed: true` and unfixed children in one group logs a console warning and treats the whole group as unfixed (avoids a broken sticky layout).
@@ -177,7 +182,7 @@ type SortType = 'asc' | 'desc'
 | `pagination` | `{ isFirstPage, isLastPage, currentPaginationNumber, maxPaginationNumber, nextPage, prevPage }` | Replace default pagination controls. |
 | `loading` | — | Custom loading entity inside the loading mask. |
 | `empty-message` | — | Custom empty state (default uses `emptyMessage` prop). |
-| `customize-headers` | — | When present, replaces default `<thead>` entirely (slot renders instead of thead). Prefer `Header.children` for grouped headers; keep this slot for fully custom markup. |
+| `customize-headers` | `{ headers, headerRows, updateSortField, toggleSelectAll, multipleSelectStatus, isMultiSorting, getMultiSortNumber }` | When present, replaces default `<thead>` entirely. Prefer `Header.children` for grouped headers. Slot props let a custom thead keep sort / select-all without copying internals. |
 
 Slot forwarding: `DataTableBodyRow` re-exposes parent slots, so `item-*` / `expand` / `item` work as documented in upstream feature docs.
 
@@ -274,7 +279,7 @@ When `server-options` is `null`:
 
 1. **Search** (`searchValue` / `searchField`) →  
 2. **Filter** (`filterOptions`) →  
-3. **Sort** (header / `sortBy`+`sortType` / multi-sort) →  
+3. **Sort** (header / `sortBy`+`sortType` / multi-sort / per-column `Header.sort`) →  
 4. **Paginate** (`currentPage`, `rowsPerPage`) → `pageItems`.
 
 - Changing `searchValue` or `filterOptions` resets to page **1**.
