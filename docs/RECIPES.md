@@ -312,11 +312,54 @@ const items: Item[] = [/* … */];
 - `hidden` omits the column from render; the field remains on `items`.
 - Only **leaves** (no `children`) are body columns. Group parents are not sortable.
 - Do not mix `fixed: true` and unfixed children in one group — the table warns and treats the group as unfixed.
-- Prefer `children` over `#customize-headers` for groups. Use `#customize-headers` only when you need fully custom thead markup; it now receives `headers`, `updateSortField`, `toggleSelectAll`, and related helpers.
+- Prefer `children` over `#customize-headers` for groups. Use `#customize-headers` only when you need fully custom thead markup; it now receives `headers`, `updateSortField`, `toggleSelectAll`, `getHeaderCellFixedStyle`, and related helpers.
 
 ---
 
-## 9. Migrating from `vue3-easy-data-table`
+## 9. Custom thead with fixed columns
+
+`#customize-headers` replaces the default `<thead>`. Do not reimplement painted-width `left` math — use `getHeaderCellFixedStyle(header)` (groups use the first leaf). Mark frozen cells with `fixed-column`, and `shadow` on the last frozen leaf/group.
+
+```vue
+<template>
+  <EasyDataTable :headers="headers" :items="items" table-height="320">
+    <template
+      #customize-headers="{
+        headerRows,
+        getHeaderCellFixedStyle,
+        lastFixedColumn,
+      }"
+    >
+      <thead class="vue3-easy-data-table__header">
+        <tr v-for="(row, rowIndex) in headerRows" :key="rowIndex">
+          <th
+            v-for="header in row"
+            :key="header.value"
+            :colspan="header.colspan"
+            :rowspan="header.rowspan"
+            :class="{
+              'fixed-column': header.fixed,
+              shadow: header.isGroup
+                ? header.lastLeafValue === lastFixedColumn && header.fixed
+                : header.value === lastFixedColumn,
+            }"
+            :style="getHeaderCellFixedStyle(header)"
+            :data-leaf-column="header.isGroup ? undefined : true"
+          >
+            {{ header.text }}
+          </th>
+        </tr>
+      </thead>
+    </template>
+  </EasyDataTable>
+</template>
+```
+
+`.vue3-easy-data-table__main.fixed-header th` stays vertically sticky (`z-index` 3). `th.fixed-column` wins at `z-index` 4 with an opaque header background so scrolling header cells cannot paint through frozen ones (including `#customize-headers` markup).
+
+---
+
+## 10. Migrating from `vue3-easy-data-table`
 
 One-line package + CSS path change:
 

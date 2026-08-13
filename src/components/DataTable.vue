@@ -40,6 +40,10 @@
             multipleSelectStatus,
             isMultiSorting,
             getMultiSortNumber,
+            getHeaderCellFixedStyle,
+            getFixedDistance,
+            lastFixedColumn,
+            fixedHeaders,
           }"
         />
         <thead

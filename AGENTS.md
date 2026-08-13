@@ -64,7 +64,8 @@ Source of truth for defaults: `src/propsWithDefault.ts` + required `headers` / `
 | Selection never appears | Selection requires `v-model:items-selected` (non-`null`); `null` disables checkboxes |
 | Expecting client search in server mode | Search/filter are client-only; send criteria in `serverOptions` custom fields |
 | Grouped headers mixing `fixed` and unfixed children | Make every visible leaf `fixed: true`, or none; mixed groups warn and are treated as unfixed |
-| Reaching for `#customize-headers` just to group columns | Prefer `Header.children`; `#customize-headers` still replaces the entire thead (now binds `updateSortField` / `toggleSelectAll` if you need a fully custom thead) |
+| Reaching for `#customize-headers` just to group columns | Prefer `Header.children`; `#customize-headers` still replaces the entire thead (binds `updateSortField` / `toggleSelectAll` / `getHeaderCellFixedStyle` if you need a fully custom thead) |
+| Custom thead + `fixed` columns sliding under later headers | Apply `getHeaderCellFixedStyle(header)` and class `fixed-column` (and `shadow` on the last frozen cell) |
 | Custom date/order sort looking wrong | Set `Header.sort` `(a, b) => number` in **client** mode; server mode must sort on the parent |
 
 ## Testing commands (this repo)
@@ -81,4 +82,4 @@ Full local benches (not CI-gated on timings): `npm run bench`.
 
 ## Versioning
 
-Current line is **`1.6.0-alpha.*`** (see `package.json`). Alphas/RCs ship additive Phase work (identity, virtual, server DX, a11y, header `align`/`className`/`hidden`/`children`) before a stable 1.6.0. Prefer latest alpha when documenting or consuming fork-only APIs (`item-key`, `virtual*`, `server-select-all`, a11y, grouped headers).
+Current line is **`1.6.0-alpha.*`** (see `package.json`). Alphas/RCs ship additive Phase work (identity, virtual, server DX, a11y, header `align`/`className`/`hidden`/`children`) before a stable 1.6.0. Prefer latest alpha when documenting or consuming fork-only APIs (`item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, `#customize-headers` sticky helpers).

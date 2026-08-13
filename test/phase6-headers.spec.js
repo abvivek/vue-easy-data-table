@@ -7,8 +7,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import DataTable from '../src/components/DataTable.vue';
-import { readPaintedColumnWidths } from '../src/stickyColumns';
+import { readPaintedColumnWidths, FIXED_COLUMN_HEADER_Z_INDEX, STICKY_HEADER_Z_INDEX } from '../src/stickyColumns';
 import {
   cloneHeader,
   filterHiddenHeaders,
@@ -603,6 +606,140 @@ describe('Phase 6 headerAlign / minWidth / maxWidth / sort / customize-headers',
     expect(slotProps.multipleSelectStatus).toBeTruthy();
     expect(Array.isArray(slotProps.headers)).toBe(true);
     expect(Array.isArray(slotProps.headerRows)).toBe(true);
+    expect(typeof slotProps.getHeaderCellFixedStyle).toBe('function');
+    expect(typeof slotProps.getFixedDistance).toBe('function');
+    expect(slotProps.lastFixedColumn).toBeDefined();
+    expect(Array.isArray(slotProps.fixedHeaders)).toBe(true);
+
+    wrapper.unmount();
+  });
+});
+
+function parseStyleZIndex(style) {
+  const match = String(style || '').match(/z-index:\s*(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+function isLastFixedHeaderCell(header, lastFixedColumn) {
+  if (header.isGroup) return header.lastLeafValue === lastFixedColumn && !!header.fixed;
+  return header.value === lastFixedColumn;
+}
+
+function renderCustomThead(props) {
+  const rows = props.headerRows?.length ? props.headerRows : [props.headers];
+  return h('thead', { class: 'vue3-easy-data-table__header custom-fixed-head' }, rows.map((row) => (
+    h('tr', row.map((header) => h('th', {
+      class: {
+        'fixed-column': !!header.fixed,
+        shadow: isLastFixedHeaderCell(header, props.lastFixedColumn),
+      },
+      style: props.getHeaderCellFixedStyle(header),
+      colspan: header.colspan,
+      rowspan: header.rowspan,
+      'data-leaf-column': header.isGroup ? undefined : 'true',
+    }, header.text)))
+  )));
+}
+
+describe('Phase 6 #customize-headers + fixed columns', () => {
+  it('applies getHeaderCellFixedStyle on custom frozen th (sticky left + higher z-index)', async () => {
+    let slotProps;
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name', fixed: true, width: 100 },
+          { text: 'Age', value: 'age', fixed: true, width: 80 },
+          { text: 'Address', value: 'address', width: 200 },
+        ],
+        items,
+        rowsPerPage: 10,
+        tableHeight: 240,
+      },
+      slots: {
+        'customize-headers': (props) => {
+          slotProps = props;
+          return renderCustomThead(props);
+        },
+      },
+    });
+    await nextTick();
+    await nextTick();
+
+    expect(typeof slotProps.getHeaderCellFixedStyle).toBe('function');
+    expect(slotProps.lastFixedColumn).toBe('age');
+    expect(slotProps.fixedHeaders.map((h) => h.value)).toEqual(['name', 'age']);
+
+    const ths = wrapper.findAll('thead th');
+    const nameTh = ths.find((th) => th.text().includes('Name'));
+    const ageTh = ths.find((th) => th.text().includes('Age'));
+    const addrTh = ths.find((th) => th.text().includes('Address'));
+
+    expect(nameTh.classes()).toContain('fixed-column');
+    expect(ageTh.classes()).toContain('fixed-column');
+    expect(ageTh.classes()).toContain('shadow');
+    expect(addrTh.classes()).not.toContain('fixed-column');
+
+    expect(nameTh.attributes('style')).toMatch(/position:\s*sticky/);
+    expect(parseStylePx(nameTh.attributes('style'), 'left')).toBe(0);
+    expect(parseStyleZIndex(nameTh.attributes('style'))).toBe(FIXED_COLUMN_HEADER_Z_INDEX);
+    expect(parseStylePx(ageTh.attributes('style'), 'left')).toBe(120);
+
+    expect(addrTh.attributes('style') || '').not.toMatch(/position:\s*sticky/);
+    expect(parseStyleZIndex(addrTh.attributes('style') || '')).not.toBe(FIXED_COLUMN_HEADER_Z_INDEX);
+    expect(FIXED_COLUMN_HEADER_Z_INDEX).toBeGreaterThan(STICKY_HEADER_Z_INDEX);
+
+    wrapper.unmount();
+  });
+
+  it('uses :deep(th.fixed-column) so scoped CSS matches #customize-headers cells', () => {
+    // Parent-owned slot <th> do not get this SFC's data-v id. Without :deep (or
+    // :slotted, which only matches slot roots — here thead, not nested th)
+    // the background/z-index rules never apply and later headers show through.
+    const scss = readFileSync(
+      path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src/scss/vue3-easy-data-table.scss'),
+      'utf8',
+    );
+    expect(scss).toMatch(/:deep\(\s*th\.fixed-column\s*\)/);
+    expect(scss).not.toMatch(/^\s*th\.fixed-column\s*\{/m);
+    expect(scss).not.toMatch(/\.vue3-easy-data-table__main\s+th\.fixed-column/);
+    expect(scss).not.toMatch(/\.vue3-easy-data-table__header\s+th\.fixed-column/);
+  });
+
+  it('sticks a fully-fixed group parent using the first leaf left', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          {
+            text: 'Member info',
+            value: 'member-info',
+            children: [
+              { text: 'Team', value: 'team', fixed: true, width: 100 },
+              { text: 'Number', value: 'number', fixed: true, width: 80 },
+            ],
+          },
+          { text: 'Name', value: 'name', width: 200 },
+        ],
+        items,
+        rowsPerPage: 10,
+        tableHeight: 240,
+      },
+      slots: {
+        'customize-headers': (props) => renderCustomThead(props),
+      },
+    });
+    await nextTick();
+    await nextTick();
+
+    const groupTh = wrapper.findAll('thead th').find((th) => th.text().includes('Member info'));
+    const teamTh = wrapper.findAll('thead th').find((th) => th.text().includes('Team'));
+    const nameTh = wrapper.findAll('thead th').find((th) => th.text().includes('Name'));
+
+    expect(groupTh.classes()).toContain('fixed-column');
+    expect(groupTh.attributes('style')).toMatch(/position:\s*sticky/);
+    expect(parseStylePx(groupTh.attributes('style'), 'left')).toBe(0);
+    expect(parseStyleZIndex(groupTh.attributes('style'))).toBe(FIXED_COLUMN_HEADER_Z_INDEX);
+    expect(parseStylePx(teamTh.attributes('style'), 'left')).toBe(0);
+    expect(nameTh.classes()).not.toContain('fixed-column');
 
     wrapper.unmount();
   });
