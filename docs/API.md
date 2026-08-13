@@ -22,8 +22,29 @@ type Header = {
   sortable?: boolean
   fixed?: boolean
   width?: number
+  /** Per-column text align for th + matching td. Falls back to header/body text-direction props. */
+  align?: TextDirection
+  /** Extra class on that column's th and td; merged with table-level class-name props. */
+  className?: string
+  /** Omit from render; item data unchanged. */
+  hidden?: boolean
+  /** Nested group headers. Only leaves (no children) are body columns. */
+  children?: Header[]
 }
 ```
+
+Omitting the new fields (`align`, `className`, `hidden`, `children`) keeps the same single-row thead and body columns as before.
+
+| Field | Notes |
+| --- | --- |
+| `align` | `'left' \| 'center' \| 'right'` on that column’s `<th>` and matching `<td>`. Falls back to `header-text-direction` / `body-text-direction`. |
+| `className` | Extra class on that column’s `<th>` and `<td>`, merged with `header-item-class-name` / `body-item-class-name`. |
+| `hidden` | Column is not rendered. Item objects are unchanged (the field is still on the row). |
+| `children` | Nested group headers. **Only leaves** (no `children`, or empty `children`) become body columns. Prefer `children` over `#customize-headers` for grouped headers. |
+
+**Grouped + `fixed`:** a group is sticky only when **every** visible leaf has `fixed: true`. Mixing `fixed: true` and unfixed children in one group logs a console warning and treats the whole group as unfixed (avoids a broken sticky layout).
+
+**Fixed column order:** top-level items (a leaf or a whole group) with all-visible-leaves-fixed are moved before unfixed top-level items — the same “fixed columns first” behavior as a flat header list.
 
 ### `Item`
 
@@ -156,7 +177,7 @@ type SortType = 'asc' | 'desc'
 | `pagination` | `{ isFirstPage, isLastPage, currentPaginationNumber, maxPaginationNumber, nextPage, prevPage }` | Replace default pagination controls. |
 | `loading` | — | Custom loading entity inside the loading mask. |
 | `empty-message` | — | Custom empty state (default uses `emptyMessage` prop). |
-| `customize-headers` | — | When present, replaces default `<thead>` entirely (slot renders instead of thead). |
+| `customize-headers` | — | When present, replaces default `<thead>` entirely (slot renders instead of thead). Prefer `Header.children` for grouped headers; keep this slot for fully custom markup. |
 
 Slot forwarding: `DataTableBodyRow` re-exposes parent slots, so `item-*` / `expand` / `item` work as documented in upstream feature docs.
 
@@ -278,3 +299,7 @@ When `server-options` is non-`null`:
 ### Accessibility (1.6.0-alpha.6+)
 
 Additive attributes/keyboard only — class names unchanged. Sortable headers: `aria-sort`, focusable, Enter/Space. Checkboxes/pagination/expand: accessible names and ARIA. Loading: `aria-busy` on table. Custom slots that replace controls should keep their own accessible names.
+
+### Grouped headers (1.6.0-alpha.8+)
+
+`Header.children` builds multi-row `<thead>` (group parents + leaf columns). `#header-{value}`, lowercase, and `#header` slots apply to group parent cells as well as leaves. Sort UI stays on sortable **leaves** only. `#customize-headers` still replaces the entire thead when you need markup the tree cannot express.

@@ -38,25 +38,32 @@
           class="vue3-easy-data-table__header"
           :class="[headerClassName]"
         >
-          <tr>
+          <tr
+            v-for="(row, rowIndex) in headerRows"
+            :key="rowIndex"
+          >
             <th
-              v-for="(header, index) in headersForRender"
-              :key="index"
+              v-for="(header, index) in row"
+              :key="header.value + '-' + index"
               :class="[{
-                sortable: header.sortable,
-                'none': header.sortable && header.sortType === 'none',
-                'desc': header.sortable && header.sortType === 'desc',
-                'asc': header.sortable && header.sortType === 'asc',
-                'shadow': header.value === lastFixedColumn,
+                sortable: !header.isGroup && header.sortable,
+                'none': !header.isGroup && header.sortable && header.sortType === 'none',
+                'desc': !header.isGroup && header.sortable && header.sortType === 'desc',
+                'asc': !header.isGroup && header.sortable && header.sortType === 'asc',
+                'shadow': header.isGroup
+                  ? (header.lastLeafValue === lastFixedColumn && !!header.fixed)
+                  : header.value === lastFixedColumn,
                 'fixed-column': header.fixed,
-              // eslint-disable-next-line max-len
-              }, typeof headerItemClassName === 'string' ? headerItemClassName : headerItemClassName(header as Header, index + 1)]"
-              :style="getFixedDistance(header.value)"
-              :aria-sort="header.sortable ? ariaSortValue(header.sortType) : undefined"
-              :tabindex="(header.sortable && header.sortType) ? 0 : undefined"
+              }, typeof headerItemClassName === 'string' ? headerItemClassName : headerItemClassName(header as Header, index + 1), header.className]"
+              :style="getHeaderCellFixedStyle(header)"
+              :colspan="header.colspan"
+              :rowspan="header.rowspan"
+              :data-leaf-column="header.isGroup ? undefined : 'true'"
+              :aria-sort="(!header.isGroup && header.sortable) ? ariaSortValue(header.sortType) : undefined"
+              :tabindex="(!header.isGroup && header.sortable && header.sortType) ? 0 : undefined"
               :scope="header.text === 'checkbox' ? undefined : 'col'"
-              @click.stop="(header.sortable && header.sortType) ? updateSortField(header.value, header.sortType) : null"
-              @keydown="(header.sortable && header.sortType) ? onSortableHeaderKeydown($event, header.value, header.sortType) : null"
+              @click.stop="(!header.isGroup && header.sortable && header.sortType) ? updateSortField(header.value, header.sortType) : null"
+              @keydown="(!header.isGroup && header.sortable && header.sortType) ? onSortableHeaderKeydown($event, header.value, header.sortType) : null"
             >
               <MultipleSelectCheckBox
                 v-if="header.text === 'checkbox'"
@@ -67,7 +74,7 @@
               <span
                 v-else
                 class="header"
-                :class="`direction-${headerTextDirection}`"
+                :class="`direction-${header.align || headerTextDirection}`"
               >
                 <slot
                   v-if="slots[`header-${header.value}`]"
@@ -83,7 +90,7 @@
                   v-else-if="slots['header']"
                   name="header"
                   v-bind="header"
-                />   
+                />
                 <span
                   v-else
                   class="header-text"
@@ -91,14 +98,14 @@
                   {{ header.text }}
                 </span>
                 <i
-                  v-if="header.sortable"
+                  v-if="!header.isGroup && header.sortable"
                   :key="header.sortType ? header.sortType : 'none'"
                   class="sortType-icon"
                   :class="{'desc': header.sortType === 'desc'}"
                   aria-hidden="true"
                 ></i>
                 <span
-                  v-if="multiSort && isMultiSorting(header.value)"
+                  v-if="!header.isGroup && multiSort && isMultiSorting(header.value)"
                   class="multi-sort__number"
                   aria-hidden="true"
                 >
@@ -154,6 +161,7 @@
             :item="row.item"
             :index="row.index"
             :header-columns="headerColumns"
+            :headers-for-render="headersForRender"
             :headers-for-render-length="headersForRender.length"
             :prev-page-end-index="prevPageEndIndex"
             :last-fixed-column="lastFixedColumn"
@@ -491,6 +499,7 @@ const {
   clientSortOptions,
   headerColumns,
   headersForRender,
+  headerRows,
   updateSortField,
   isMultiSorting,
   getMultiSortNumber,
@@ -759,6 +768,14 @@ const getFixedDistance = (column: string, type: 'td' | 'th' = 'th'): CSSProperti
     position: 'sticky',
     zIndex: type === 'th' ? FIXED_COLUMN_HEADER_Z_INDEX : FIXED_COLUMN_BODY_Z_INDEX,
   };
+};
+
+const getHeaderCellFixedStyle = (header: HeaderForRender): CSSProperties | undefined => {
+  if (header.isGroup) {
+    if (!header.fixed || !header.firstLeafValue) return undefined;
+    return getFixedDistance(header.firstLeafValue);
+  }
+  return getFixedDistance(header.value);
 };
 
 watch(loading, (newVal, oldVal) => {

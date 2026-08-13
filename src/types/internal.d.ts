@@ -1,4 +1,4 @@
-import type { SortType } from './main';
+import type { SortType, TextDirection } from './main';
 
 export type ServerOptionsComputed = {
   page: number
@@ -8,12 +8,22 @@ export type ServerOptionsComputed = {
 }
 
 export type HeaderForRender = {
-  text: string,
-  value: string,
-  sortable?: boolean,
-  sortType?: SortType | 'none',
-  fixed?: Boolean,
-  width?: number,
+  text: string
+  value: string
+  sortable?: boolean
+  sortType?: SortType | 'none'
+  fixed?: Boolean
+  width?: number
+  align?: TextDirection
+  className?: string
+  colspan?: number
+  rowspan?: number
+  /** Group parent cell (not a body column). Sort is ignored. */
+  isGroup?: boolean
+  /** First leaf column value under this cell (for sticky left on group parents). */
+  firstLeafValue?: string
+  /** Last leaf column value under this cell (for shadow on group parents). */
+  lastLeafValue?: string
 }
 
 export type ClientSortOptions = {

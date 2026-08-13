@@ -254,9 +254,47 @@ const items: Item[] = [/* … */];
 
 Also available: `#header`, `#header-{value}`, `#loading`, `#empty-message`, `#pagination`, `#body`, `#customize-headers`.
 
+`#customize-headers` still replaces the entire `<thead>`. For grouped columns prefer `Header.children` (see recipe 8).
+
 ---
 
-## 8. Migrating from `vue3-easy-data-table`
+## 8. Per-column align / className / hidden and grouped headers
+
+```vue
+<template>
+  <EasyDataTable :headers="headers" :items="items" />
+</template>
+
+<script setup lang="ts">
+import type { Header, Item } from 'vue-easy-data-table';
+
+const headers: Header[] = [
+  { text: 'Name', value: 'name' },
+  { text: 'Age', value: 'age', align: 'right', className: 'age-col', sortable: true },
+  { text: 'Internal id', value: 'id', hidden: true },
+  {
+    text: 'Member info',
+    value: 'member-info',
+    children: [
+      { text: 'Team', value: 'team' },
+      { text: 'Number', value: 'number', sortable: true },
+    ],
+  },
+];
+
+const items: Item[] = [/* … */];
+</script>
+```
+
+- `align` / `className` apply to that column’s `<th>` and matching `<td>` (merged with table-level class-name props).
+- `hidden` omits the column from render; the field remains on `items`.
+- Only **leaves** (no `children`) are body columns. Group parents are not sortable.
+- Do not mix `fixed: true` and unfixed children in one group — the table warns and treats the group as unfixed.
+- Prefer `children` over `#customize-headers` for groups. Use `#customize-headers` only when you need fully custom thead markup.
+
+---
+
+## 9. Migrating from `vue3-easy-data-table`
 
 One-line package + CSS path change:
 

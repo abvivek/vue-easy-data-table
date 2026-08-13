@@ -34,6 +34,14 @@ export type Header = {
   sortable?: boolean
   fixed?: boolean
   width?: number
+  /** Per-column text align for th + matching td. Falls back to header/body text-direction props. */
+  align?: TextDirection
+  /** Extra class on that column's th and td; merged with table-level class-name props. */
+  className?: string
+  /** Omit from render; item data unchanged. */
+  hidden?: boolean
+  /** Nested group headers. Only leaves (no children) are body columns. */
+  children?: Header[]
 }
 
 export type ServerOptions = {
