@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.7.0
+
+Additive totals (summary) row:
+
+- **`Header.summary`**: built-in aggregations (`sum`, `avg`, `min`, `max`, `count`) or custom `SummaryFn` on leaf columns — **client mode only**.
+- **Props**: `show-summary`, `summary-scope` (`page` \| `all`), `summary-row`, `summary-text`, `fixed-summary`.
+- **Slots**: `#summary-{value}` and `#summary` with `{ header, value, items, scope }`.
+- **`<tfoot>` row**: does not disable `virtual` (unlike `#body-append` totals); `hide-footer` does not hide the summary row.
+- **Server mode**: pass precomputed totals via `summary-row`; `Header.summary` is ignored (console warn once).
+- **Sticky columns**: frozen totals cells reuse painted `left` / z-index (`FIXED_COLUMN_SUMMARY_Z_INDEX`).
+- Injected checkbox / index / expand columns stay empty; a data leaf with those `value`s still aggregates.
+- Built-in `min` / `max` iterate (no spread into `Math.min`/`Math.max`) so large `summary-scope=all` sets cannot throw `RangeError`.
+- Hover restyle is scoped to tbody so totals cells keep the summary background.
+- **Types exported**: `SummaryAggregation`, `SummaryScope`, `SummaryContext`, `SummaryFn`, `SummaryRow`.
+
+See [MIGRATION.md](./MIGRATION.md) and [docs/API.md](./docs/API.md).
+
 ## 1.6.1
 
 Docs — README rewrite for the stable 1.6 line (install, migration, features). No runtime change.

@@ -31,6 +31,7 @@ type Header = {
   className?: string
   hidden?: boolean
   sort?: HeaderSortCompare
+  summary?: SummaryAggregation | SummaryFn
   children?: Header[]
 }
 ```
@@ -45,6 +46,7 @@ Omitting the new fields keeps the same single-row thead and body columns as befo
 | `className` | Extra class on that column’s `<th>` and `<td>`, merged with `header-item-class-name` / `body-item-class-name`. |
 | `hidden` | Column is not rendered. Item objects are unchanged (the field is still on the row). |
 | `sort` | Client-mode custom compare `(a, b) => number` (negative if `a` precedes `b` when ascending). The table negates for desc. **Ignored in server mode.** |
+| `summary` | Totals-row cell for this column: a built-in aggregation name (`'sum' \| 'avg' \| 'min' \| 'max' \| 'count'`) or a `SummaryFn`. Declaring it on any visible leaf renders the totals `<tfoot>`. **Client mode only** — in server mode use the `summary-row` prop. Set it on **leaves**, not group parents (parents are not body columns). See [Summary (totals) row](#summary-totals-row). |
 | `children` | Nested group headers. **Only leaves** (no `children`, or empty `children`) become body columns. Prefer `children` over `#customize-headers` for grouped headers. |
 
 **Grouped + `fixed`:** a group is sticky only when **every** visible leaf has `fixed: true`. Mixing `fixed: true` and unfixed children in one group logs a console warning and treats the whole group as unfixed (avoids a broken sticky layout).
@@ -111,7 +113,7 @@ type SortType = 'asc' | 'desc'
 | `rows-per-page-message` | `string` | `'rows per page:'` | Footer label before selector. |
 | `rows-of-page-separator-message` | `string` | `'of'` | Between range and total (`1–25 of 100`). |
 | `buttons-pagination` | `boolean` | `false` | Numbered page buttons instead of arrows only. |
-| `hide-footer` | `boolean` | `false` | Hide entire footer. |
+| `hide-footer` | `boolean` | `false` | Hide pagination footer. Does **not** hide the totals `<tfoot>`. |
 | `hide-rows-per-page` | `boolean` | `false` | Hide rows-per-page selector. |
 
 ### Expand
@@ -122,6 +124,37 @@ type SortType = 'asc' | 'desc'
 | `expand-column-width` | `number` | `36` | Expand column width (px). |
 | `fixed-expand` | `boolean` | `false` | Sticky expand column. |
 | `click-row-to-expand` | `boolean` | `false` | Toggle expand on row click (in addition to expand control). |
+
+### Summary (totals) row
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `show-summary` | `boolean` | `false` | Force the totals `<tfoot>` even when no column declares `Header.summary` (useful when the row is filled by `#summary*` slots only). |
+| `summary-scope` | `'page' \| 'all'` | `'all'` | Rows fed to aggregations in client mode. `'all'`: the **filtered + sorted** dataset (`totalItems`). `'page'`: current page only (`pageItems`). Ignored in server mode. |
+| `summary-row` | `SummaryRow \| null` | `null` | Precomputed totals keyed by `header.value`. Overrides `Header.summary` per key and is the **only** supported source in server mode. Non-`null` (even `{}`) renders the row. |
+| `summary-text` | `string` | `'Total'` | Label rendered in the first totals cell that has no value and no slot of its own. `''` renders no label cell at all. |
+| `fixed-summary` | `boolean` | `true` | Stick the totals row to the bottom of the scroll container (`position: sticky; bottom: 0`, `z-index` 3 / frozen cells 4). `false` leaves it in flow at the end of the table. |
+
+```ts
+type SummaryAggregation = 'sum' | 'avg' | 'min' | 'max' | 'count'
+
+// which rows feed aggregations (client mode)
+type SummaryScope = 'page' | 'all'
+
+type SummaryContext = {
+  items: Item[]   // rows in scope
+  header: Header
+  scope: SummaryScope
+}
+
+// custom totals cell; return null for an empty cell
+type SummaryFn = (ctx: SummaryContext) => string | number | null
+
+// precomputed totals keyed by header.value
+type SummaryRow = Record<string, string | number | null>
+```
+
+All five types are exported from the package root (see [`types/main.d.ts`](../types/main.d.ts)). Semantics: [Summary (totals) row](#summary-totals-row) under Behavior notes.
 
 ### Virtualization (opt-in)
 
@@ -179,6 +212,8 @@ type SortType = 'asc' | 'desc'
 | `body` | `pageItems` (bound as slot props) | Replace entire `<tbody>` content path. Virtual N/A. |
 | `body-prepend` | `{ items, pagination, headers }` | Rows/content before data rows. Disables `virtual`. |
 | `body-append` | `{ items, pagination, headers }` | After data rows (`pagination` includes `updatePage`). Disables `virtual`. |
+| `summary-{value}` | `{ header, value, items, scope }` | Totals cell by `header.value` (also tries `summary-{value.toLowerCase()}`). Presence renders the totals `<tfoot>`. `value` is the resolved total (`summary-row` entry or `Header.summary` result, `null` when there is none); `items` are the rows in scope (empty array in server mode); `scope` is the `summary-scope` prop. |
+| `summary` | `{ header, value, items, scope }` | Fallback totals cell for any non-synthetic column without a `summary-{value}` slot. Because it matches **every** such column, no `summary-text` label cell is emitted — render your own label. |
 | `pagination` | `{ isFirstPage, isLastPage, currentPaginationNumber, maxPaginationNumber, nextPage, prevPage }` | Replace default pagination controls. |
 | `loading` | — | Custom loading entity inside the loading mask. |
 | `empty-message` | — | Custom empty state (default uses `emptyMessage` prop). |
@@ -247,6 +282,11 @@ Root defaults live in `DataTable.vue` `<style>` (`:root`). Stylesheets: `src/scs
 | `--easy-table-header-*` | Header font, height, colors, item padding |
 | `--easy-table-body-row-*` | Body row height, font, colors, hover, even-row |
 | `--easy-table-body-item-padding` | Cell padding |
+| `--easy-table-summary-background-color` | Totals row background (default `#fff`) |
+| `--easy-table-summary-font-color` | Totals row text color (default `#212121`) |
+| `--easy-table-summary-font-size` | Totals row font size (default `12px`) |
+| `--easy-table-summary-font-weight` | Totals row font weight (default `600`) |
+| `--easy-table-summary-item-padding` | Totals cell padding (default `0px 10px`) |
 | `--easy-table-footer-*` | Footer chrome |
 | `--easy-table-message-*` | Empty message |
 | `--easy-table-loading-mask-*` | Loading overlay |
@@ -260,9 +300,13 @@ Root defaults live in `DataTable.vue` `<style>` (`:root`). Stylesheets: `src/scs
 | `vue3-easy-data-table` | Root |
 | `vue3-easy-data-table__main` | Scroll/body wrapper (`fixed-header`, `fixed-height`, `hoverable`, `border-cell`, …) |
 | `vue3-easy-data-table__header` / `__body` / `__footer` | Sections |
+| `vue3-easy-data-table__summary` | Totals `<tfoot>` (only rendered when something opts in) |
+| `fixed-summary` | On that `<tfoot>` when `fixed-summary` is true (sticky bottom) |
+| `summary-cell` | Every totals `<th>` / `<td>` (also carries `direction-*` and `Header.className`) |
+| `summary-label` | The `summary-text` label cell (`<th scope="row">`, also `summary-cell`) |
 | `sortable` / `asc` / `desc` / `none` | Sortable `<th>` |
 | `fixed-column` | Frozen `<th>` / `<td>` (`position: sticky` + painted `left`). Custom `#customize-headers` cells must add this class (also supplies the opaque header background so later headers cannot paint through). |
-| `shadow` | Last frozen cell (inset shadow when the table is scrolled horizontally). |
+| `shadow` | Last frozen cell (inset shadow when the table is scrolled horizontally), including the totals row. |
 | `expand-icon` / `expanding` | Expand control |
 | `easy-checkbox` | Checkbox UI (see checkbox SCSS) |
 | `previous-page__click-button` / `next-page__click-button` | Pagination arrows |
@@ -310,3 +354,18 @@ Additive attributes/keyboard only — class names unchanged. Sortable headers: `
 ### Grouped headers (1.6.0+)
 
 `Header.children` builds multi-row `<thead>` (group parents + leaf columns). `#header-{value}`, lowercase, and `#header` slots apply to group parent cells as well as leaves. Sort UI stays on sortable **leaves** only. `#customize-headers` still replaces the entire thead when you need markup the tree cannot express. For frozen columns in that slot, apply `getHeaderCellFixedStyle(header)` and class `fixed-column` (see recipes).
+
+### Summary (totals) row (1.7.0+)
+
+Rendered as `<tfoot class="vue3-easy-data-table__summary">` when any of: `show-summary`, non-`null` `summary-row`, a visible leaf declares `Header.summary`, or a `#summary*` slot is present. **`hide-footer` does not hide the summary row.**
+
+- Cells iterate `headersForRender` (same column order as body). Injected checkbox / index / expand columns render empty; a consumer leaf with those `value`s is still aggregated.
+- **`summary-text`** (default `'Total'`) becomes a `<th scope="row">` in the first non-synthetic column with no value and no dedicated slot. `''` skips the label cell.
+- **`summary-row`** overrides `Header.summary` per key. **`#summary-{value}`** overrides both for presentation.
+- **Client mode:** aggregations run over `summary-scope` — `'all'` uses the filtered + sorted dataset (`totalItems`); `'page'` uses `pageItems`.
+- **Server mode:** never aggregates; pass precomputed totals via `summary-row`. `Header.summary` without `summary-row` warns once and renders blank cells.
+- **`#summary` slot:** matches every non-synthetic column without a `summary-{value}` slot; no auto label — render your own.
+- **Virtualization:** summary does not disable `virtual` (unlike `#body-append`).
+- **Sticky columns:** frozen totals cells reuse header `left` / z-index (`fixed-column`, `shadow`, `FIXED_COLUMN_SUMMARY_Z_INDEX`).
+
+Built-in aggregations skip null, undefined, empty string, and non-numeric strings for `sum`/`avg`/`min`/`max`; `count` counts non-empty values. Custom `SummaryFn` receives `{ items, header, scope }` and may return `null` for an empty cell.

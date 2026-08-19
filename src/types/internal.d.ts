@@ -1,4 +1,6 @@
-import type { HeaderSortCompare, SortType, TextDirection } from './main';
+import type {
+  HeaderSortCompare, SortType, SummaryAggregation, SummaryFn, TextDirection,
+} from './main';
 
 export type ServerOptionsComputed = {
   page: number
@@ -20,6 +22,8 @@ export type HeaderForRender = {
   headerAlign?: TextDirection
   className?: string
   sort?: HeaderSortCompare
+  /** Totals-row aggregation or custom function (leaf columns only). */
+  summary?: SummaryAggregation | SummaryFn
   colspan?: number
   rowspan?: number
   /** Group parent cell (not a body column). Sort is ignored. */

@@ -359,7 +359,136 @@ const items: Item[] = [/* … */];
 
 ---
 
-## 10. Migrating from `vue3-easy-data-table`
+## 10. Hand-rolled totals row (`#body-append`)
+
+Prefer the built-in summary row (recipe 11) unless you need markup the `#summary*` slots cannot express. This pattern still works and needs no new props.
+
+Totals come from `@update-total-items` (the filtered + sorted set), **not** from the slot's `items`, so search and filter stay correct. Iterating the slot's `headers` keeps cells aligned with the body.
+
+```vue
+<template>
+  <EasyDataTable
+    :headers="headers"
+    :items="items"
+    :table-height="320"
+    item-key="id"
+    @update-total-items="visibleItems = $event"
+  >
+    <template #body-append="{ headers: cols }">
+      <tr class="summary-row">
+        <td v-for="col in cols" :key="col.value">
+          <template v-if="col.value === 'name'">Total</template>
+          <template v-else-if="col.value in totals">
+            {{ totals[col.value].toLocaleString() }}
+          </template>
+        </td>
+      </tr>
+    </template>
+  </EasyDataTable>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import type { Header, Item } from 'vue-easy-data-table';
+
+const headers: Header[] = [
+  { text: 'Name', value: 'name' },
+  { text: 'Amount', value: 'amount' },
+];
+
+const items = ref<Item[]>([/* … */]);
+// filtered + sorted set; seed it so the row is right before the first emit
+const visibleItems = ref<Item[]>(items.value);
+
+const SUM_FIELDS = ['amount'];
+const totals = computed(() => Object.fromEntries(SUM_FIELDS.map((field) => [
+  field,
+  visibleItems.value.reduce((acc, item) => {
+    const n = Number(item[field]);
+    return Number.isFinite(n) ? acc + n : acc;
+  }, 0),
+])));
+</script>
+
+<style>
+.summary-row td {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  font-weight: 600;
+  background-color: var(--easy-table-body-row-background-color);
+  border-top: var(--easy-table-row-border);
+}
+</style>
+```
+
+Trade-offs versus the built-in summary row:
+
+- `#body-append` **disables `virtual`**. The built-in `<tfoot>` does not.
+- Server mode: `@update-total-items` only carries the loaded page, so pass totals from your API instead of summing.
+- Frozen columns: this slot does not bind `getFixedDistance`, so a frozen cell needs hand-written `left` (fine for one pinned column at `left: 0`, fragile beyond that).
+- For page-only totals, use the slot's own `items` instead of `visibleItems`.
+
+---
+
+## 11. Built-in summary (totals) row
+
+Declare `Header.summary` on leaves for client-side aggregations, or pass precomputed `summary-row` in server mode. The row renders as `<tfoot>` (virtual stays on; `#body-append` totals still disable virtual — see recipe 10).
+
+```vue
+<template>
+  <EasyDataTable
+    :headers="headers"
+    :items="items"
+    item-key="id"
+    summary-text="Total"
+    summary-scope="all"
+    :table-height="320"
+  />
+</template>
+
+<script setup lang="ts">
+import type { Header, Item } from 'vue-easy-data-table';
+
+const headers: Header[] = [
+  { text: 'Name', value: 'name' },
+  { text: 'Amount', value: 'amount', summary: 'sum' },
+  { text: 'Qty', value: 'qty', summary: 'avg' },
+  { text: 'Status', value: 'status', summary: 'count' },
+];
+
+const items: Item[] = [/* … */];
+</script>
+```
+
+| Prop / field | Role |
+| --- | --- |
+| `Header.summary` | `'sum' \| 'avg' \| 'min' \| 'max' \| 'count'` or `(ctx) => value` — **client mode only** |
+| `summary-row` | Precomputed totals keyed by `header.value`; overrides `Header.summary`; **required in server mode** |
+| `summary-scope` | `'all'` (filtered + sorted dataset) or `'page'` (current page) |
+| `summary-text` | Label in the first empty totals cell (`''` disables the label) |
+| `show-summary` | Force `<tfoot>` when only `#summary*` slots fill the row |
+| `fixed-summary` | Sticky bottom totals row (default `true`) |
+
+Custom cell UI: `#summary-{value}` (per column) or `#summary` (fallback for every non-synthetic column — you supply the label). Slot props: `{ header, value, items, scope }`.
+
+Server mode never aggregates loaded rows — pass API totals via `summary-row`:
+
+```vue
+<EasyDataTable
+  v-model:server-options="serverOptions"
+  :server-items-length="total"
+  :items="pageRows"
+  :headers="headers"
+  :summary-row="{ amount: apiTotals.amount }"
+/>
+```
+
+Frozen columns: totals cells reuse header sticky geometry (`fixed-column`, `shadow` on last frozen).
+
+---
+
+## 12. Migrating from `vue3-easy-data-table`
 
 One-line package + CSS path change:
 

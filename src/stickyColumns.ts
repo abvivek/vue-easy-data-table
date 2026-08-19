@@ -19,6 +19,12 @@ export const STICKY_HEADER_Z_INDEX = 3;
 /** Corner: horizontally + vertically sticky header cells. */
 export const FIXED_COLUMN_HEADER_Z_INDEX = 4;
 
+/** Vertically sticky totals row (non-fixed cells). Mirrors the header pair. */
+export const SUMMARY_ROW_Z_INDEX = 3;
+
+/** Corner: horizontally + vertically sticky totals cells. */
+export const FIXED_COLUMN_SUMMARY_Z_INDEX = 4;
+
 export function parseCssPx(value: string): number {
   const n = parseFloat(value);
   return Number.isFinite(n) ? n : 0;
