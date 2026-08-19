@@ -67,8 +67,14 @@ Source of truth for defaults: `src/propsWithDefault.ts` + required `headers` / `
 | Reaching for `#customize-headers` just to group columns | Prefer `Header.children`; `#customize-headers` still replaces the entire thead (binds `updateSortField` / `toggleSelectAll` / `getHeaderCellFixedStyle` if you need a fully custom thead) |
 | Custom thead + `fixed` columns sliding under later headers | Apply `getHeaderCellFixedStyle(header)` and class `fixed-column` (and `shadow` on the last frozen cell) |
 | Custom date/order sort looking wrong | Set `Header.sort` `(a, b) => number` in **client** mode; server mode must sort on the parent |
-| Expecting client totals in server mode | Pass precomputed totals via `summary-row`; `Header.summary` is ignored (warn once) |
+| Expecting client totals in server mode | Pass precomputed totals via `summary-row`; the table never aggregates the loaded page. `Header.summary` without `summary-row` warns once |
+| `summary-scope` not changing server totals | Flat `summary-row` ignores scope; use nested `{ all, page }` (plain objects) if page vs all should differ |
+| `count` looking like a row count | `count` is non-empty cells in that column; use `'length'` for `items.length` |
+| `#summary` (no suffix) stole the Total label | That slot matches every non-synthetic column; use `#summary-{value}` to format one cell |
+| Totals disappeared with `hide-footer` | `hide-footer` only hides pagination; `<tfoot>` is separate |
+| Virtual totals matching only painted rows | `<tfoot>` uses full `pageItems` / `totalItems`, same as client; virtual does not window the summary |
 | `#body-append` totals disabled virtual | Prefer built-in `<tfoot>` summary (`Header.summary` / `summary-row`); virtual stays on |
+| Avg showing a long float | `avg` is a raw float; format in `#summary-{value}` |
 
 ## Testing commands (this repo)
 
@@ -84,4 +90,4 @@ Full local benches (not CI-gated on timings): `npm run bench`.
 
 ## Versioning
 
-Current line is **`1.7.0`** (see `package.json`). Public API is drop-in compatible with upstream 1.5.x; 1.6.x adds `item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, and `#customize-headers` sticky helpers; 1.7.0 adds the built-in totals (summary) row.
+Current line is **`1.7.1`** (see `package.json`). Public API is drop-in compatible with upstream 1.5.x; 1.6.x adds `item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, and `#customize-headers` sticky helpers; 1.7.0 adds the built-in totals (summary) row; 1.7.1 is additive (`length`, named aggregator exports, optional nested `summary-row`).

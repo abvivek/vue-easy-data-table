@@ -2,7 +2,7 @@
 
 Grounded in `types/main.d.ts`, `src/propsWithDefault.ts`, and `src/components/DataTable.vue` (plus body-row slots). Prefer this over marketing copy when uncertain.
 
-Component: default + named export **`Vue3EasyDataTable`**. Consumers often register it as **`EasyDataTable`**.
+Component: default + named export **`Vue3EasyDataTable`**. Consumers often register it as **`EasyDataTable`**. Aggregator helpers (`computeSummaryValue`, `isSummaryAggregation`, `resolveHeaderSummary`) are named exports from the same entry.
 
 ---
 
@@ -46,7 +46,7 @@ Omitting the new fields keeps the same single-row thead and body columns as befo
 | `className` | Extra class on that column’s `<th>` and `<td>`, merged with `header-item-class-name` / `body-item-class-name`. |
 | `hidden` | Column is not rendered. Item objects are unchanged (the field is still on the row). |
 | `sort` | Client-mode custom compare `(a, b) => number` (negative if `a` precedes `b` when ascending). The table negates for desc. **Ignored in server mode.** |
-| `summary` | Totals-row cell for this column: a built-in aggregation name (`'sum' \| 'avg' \| 'min' \| 'max' \| 'count'`) or a `SummaryFn`. Declaring it on any visible leaf renders the totals `<tfoot>`. **Client mode only** — in server mode use the `summary-row` prop. Set it on **leaves**, not group parents (parents are not body columns). See [Summary (totals) row](#summary-totals-row). |
+| `summary` | Totals-row cell for this column: a built-in aggregation name (`'sum' \| 'avg' \| 'min' \| 'max' \| 'count' \| 'length'`) or a `SummaryFn`. Declaring it on any visible leaf renders the totals `<tfoot>`. **Client mode only** — in server mode use the `summary-row` prop. `count` = non-empty cells in that column; `length` = row count in scope. Set it on **leaves**, not group parents (parents are not body columns). See [Summary (totals) row](#summary-totals-row). |
 | `children` | Nested group headers. **Only leaves** (no `children`, or empty `children`) become body columns. Prefer `children` over `#customize-headers` for grouped headers. |
 
 **Grouped + `fixed`:** a group is sticky only when **every** visible leaf has `fixed: true`. Mixing `fixed: true` and unfixed children in one group logs a console warning and treats the whole group as unfixed (avoids a broken sticky layout).
@@ -130,19 +130,19 @@ type SortType = 'asc' | 'desc'
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `show-summary` | `boolean` | `false` | Force the totals `<tfoot>` even when no column declares `Header.summary` (useful when the row is filled by `#summary*` slots only). |
-| `summary-scope` | `'page' \| 'all'` | `'all'` | Rows fed to aggregations in client mode. `'all'`: the **filtered + sorted** dataset (`totalItems`). `'page'`: current page only (`pageItems`). Ignored in server mode. |
-| `summary-row` | `SummaryRow \| null` | `null` | Precomputed totals keyed by `header.value`. Overrides `Header.summary` per key and is the **only** supported source in server mode. Non-`null` (even `{}`) renders the row. |
+| `summary-scope` | `'page' \| 'all'` | `'all'` | Rows fed to aggregations in client/virtual mode. `'all'`: the **filtered + sorted** dataset (`totalItems`). `'page'`: current page only (`pageItems`). Virtual does not change this (not the painted window). In server mode a **flat** `summary-row` is used as-is; nested `{ all, page }` maps honor this prop. |
+| `summary-row` | `SummaryRow \| null` | `null` | Precomputed totals keyed by `header.value`. Overrides `Header.summary` per key and is the **only** supported source in server mode. Non-`null` (even `{}`) renders the row. Optional nested `{ all?, page? }` when those keys are plain objects (not arrays / primitives). `{ amount: 1, all: 5 }` stays **flat**. |
 | `summary-text` | `string` | `'Total'` | Label rendered in the first totals cell that has no value and no slot of its own. `''` renders no label cell at all. |
 | `fixed-summary` | `boolean` | `true` | Stick the totals row to the bottom of the scroll container (`position: sticky; bottom: 0`, `z-index` 3 / frozen cells 4). `false` leaves it in flow at the end of the table. |
 
 ```ts
-type SummaryAggregation = 'sum' | 'avg' | 'min' | 'max' | 'count'
+type SummaryAggregation = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'length'
 
-// which rows feed aggregations (client mode)
+// which rows feed aggregations (client/virtual; nested server summary-row)
 type SummaryScope = 'page' | 'all'
 
 type SummaryContext = {
-  items: Item[]   // rows in scope
+  items: Item[]   // rows in scope (always [] in server slots)
   header: Header
   scope: SummaryScope
 }
@@ -150,11 +150,13 @@ type SummaryContext = {
 // custom totals cell; return null for an empty cell
 type SummaryFn = (ctx: SummaryContext) => string | number | null
 
-// precomputed totals keyed by header.value
-type SummaryRow = Record<string, string | number | null>
+// precomputed totals keyed by header.value; optional nested { all, page }
+type SummaryRow =
+  | Record<string, string | number | null>
+  | { all?: Record<string, string | number | null>; page?: Record<string, string | number | null> }
 ```
 
-All five types are exported from the package root (see [`types/main.d.ts`](../types/main.d.ts)). Semantics: [Summary (totals) row](#summary-totals-row) under Behavior notes.
+These types plus helpers `computeSummaryValue`, `isSummaryAggregation`, and `resolveHeaderSummary` are exported from the package root (see [`types/main.d.ts`](../types/main.d.ts)). Default import `Vue3EasyDataTable` is unchanged. Semantics: [Summary (totals) row](#summary-totals-row) under Behavior notes.
 
 ### Virtualization (opt-in)
 
@@ -212,8 +214,8 @@ All five types are exported from the package root (see [`types/main.d.ts`](../ty
 | `body` | `pageItems` (bound as slot props) | Replace entire `<tbody>` content path. Virtual N/A. |
 | `body-prepend` | `{ items, pagination, headers }` | Rows/content before data rows. Disables `virtual`. |
 | `body-append` | `{ items, pagination, headers }` | After data rows (`pagination` includes `updatePage`). Disables `virtual`. |
-| `summary-{value}` | `{ header, value, items, scope }` | Totals cell by `header.value` (also tries `summary-{value.toLowerCase()}`). Presence renders the totals `<tfoot>`. `value` is the resolved total (`summary-row` entry or `Header.summary` result, `null` when there is none); `items` are the rows in scope (empty array in server mode); `scope` is the `summary-scope` prop. |
-| `summary` | `{ header, value, items, scope }` | Fallback totals cell for any non-synthetic column without a `summary-{value}` slot. Because it matches **every** such column, no `summary-text` label cell is emitted — render your own label. |
+| `summary-{value}` | `{ header, value, items, scope }` | Totals cell by `header.value` (also tries `summary-{value.toLowerCase()}`). Presence renders the totals `<tfoot>`. `value` is the resolved total (`summary-row` entry or `Header.summary` result, `null` when there is none); `items` are the rows in scope (**empty array in server mode**); `scope` is the `summary-scope` prop. Use this slot to format (e.g. `avg` is a raw float). |
+| `summary` | `{ header, value, items, scope }` | Fallback totals cell for any non-synthetic column without a `summary-{value}` slot. Because it matches **every** such column, **no `summary-text` label cell is emitted** — render your own label. |
 | `pagination` | `{ isFirstPage, isLastPage, currentPaginationNumber, maxPaginationNumber, nextPage, prevPage }` | Replace default pagination controls. |
 | `loading` | — | Custom loading entity inside the loading mask. |
 | `empty-message` | — | Custom empty state (default uses `emptyMessage` prop). |
@@ -361,11 +363,12 @@ Rendered as `<tfoot class="vue3-easy-data-table__summary">` when any of: `show-s
 
 - Cells iterate `headersForRender` (same column order as body). Injected checkbox / index / expand columns render empty; a consumer leaf with those `value`s is still aggregated.
 - **`summary-text`** (default `'Total'`) becomes a `<th scope="row">` in the first non-synthetic column with no value and no dedicated slot. `''` skips the label cell.
-- **`summary-row`** overrides `Header.summary` per key. **`#summary-{value}`** overrides both for presentation.
-- **Client mode:** aggregations run over `summary-scope` — `'all'` uses the filtered + sorted dataset (`totalItems`); `'page'` uses `pageItems`.
-- **Server mode:** never aggregates; pass precomputed totals via `summary-row`. `Header.summary` without `summary-row` warns once and renders blank cells.
-- **`#summary` slot:** matches every non-synthetic column without a `summary-{value}` slot; no auto label — render your own.
+- **`summary-row`** overrides `Header.summary` per key. **`#summary-{value}`** overrides both for presentation (format here; `avg` is a raw float).
+- **Client / virtual:** the table aggregates over `summary-scope` — `'all'` uses the filtered + sorted dataset (`totalItems`); `'page'` uses `pageItems`. Virtual does **not** change `<tfoot>` vs client: totals are the full scoped set, not the painted window.
+- **Server mode:** never aggregates the loaded page; pass precomputed totals via `summary-row`. `Header.summary` without `summary-row` warns once and renders blank cells. Missing `Header.summary` keys on a non-null `summary-row` warn once (`null` is a valid empty cell).
+- **`summary-scope` in server mode:** ignored for a **flat** `summary-row` (the common `{ amount: n }` map). Nested `{ all, page }` (detected only when `all` and/or `page` is a non-null plain object, not an array) honors scope: prefer the chosen side, else the other, else empty. `{ amount: 1, all: 5 }` stays flat.
+- **`#summary` slot:** matches every non-synthetic column without a `summary-{value}` slot; **steals the label** — render your own. Server slots receive `items: []`.
 - **Virtualization:** summary does not disable `virtual` (unlike `#body-append`).
 - **Sticky columns:** frozen totals cells reuse header `left` / z-index (`fixed-column`, `shadow`, `FIXED_COLUMN_SUMMARY_Z_INDEX`).
 
-Built-in aggregations skip null, undefined, empty string, and non-numeric strings for `sum`/`avg`/`min`/`max`; `count` counts non-empty values. Custom `SummaryFn` receives `{ items, header, scope }` and may return `null` for an empty cell.
+Built-in aggregations skip null, undefined, empty string, and non-numeric strings for `sum`/`avg`/`min`/`max`; `count` counts non-empty values in that column; `length` is `items.length` (rows in scope, including empty cells). Custom `SummaryFn` receives `{ items, header, scope }` and may return `null` for an empty cell. Named helpers `computeSummaryValue` / `isSummaryAggregation` / `resolveHeaderSummary` are exported from the package root (1.7.1).

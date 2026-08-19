@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.1
+
+Additive summary-row DX (no breaking API; 1.7.0 consumers stay drop-in):
+
+- **Named exports**: `computeSummaryValue`, `isSummaryAggregation`, `resolveHeaderSummary` from the package root (default `Vue3EasyDataTable` import unchanged).
+- **`'length'` aggregation**: `items.length` (rows in scope, including empty cells). **`count` is unchanged** (non-empty cells in that column).
+- **Optional nested `summary-row`**: `{ all?, page? }` maps so server `summary-scope` can switch totals. Detected only when `all` and/or `page` is a non-null plain object (not an array). Flat maps such as `{ amount: 1, all: 5 }` stay flat. Flat server `summary-row` still ignores `summary-scope`.
+- **Warnings (once per instance)**: missing `Header.summary` keys on a non-null server `summary-row`; `summary-scope="page"` with a flat server `summary-row`. Existing “Header.summary ignored when `summary-row` is null” warning is unchanged.
+- Server mode still never aggregates the loaded page. Virtual totals still use full `pageItems` / `totalItems`, not the painted window.
+
+See [MIGRATION.md](./MIGRATION.md) and [docs/API.md](./docs/API.md).
+
 ## 1.7.0
 
 Additive totals (summary) row:

@@ -265,21 +265,27 @@ No breaking API. Omit new fields for identical behavior (no `<tfoot>`).
 
 | Field / prop | Effect |
 | --- | --- |
-| `Header.summary` | Totals cell: `'sum' \| 'avg' \| 'min' \| 'max' \| 'count'` or `SummaryFn` on a **leaf** column. Renders `<tfoot>` when any visible leaf declares it. **Client mode only.** |
+| `Header.summary` | Totals cell: `'sum' \| 'avg' \| 'min' \| 'max' \| 'count' \| 'length'` or `SummaryFn` on a **leaf** column. Renders `<tfoot>` when any visible leaf declares it. **Client mode only.** `count` = non-empty cells in that column; `length` = row count in scope (`items.length`). |
 | `show-summary` | Force totals row when only `#summary*` slots fill cells (`default: false`) |
-| `summary-scope` | `'all'` = filtered + sorted dataset; `'page'` = current page only (`default: 'all'`) |
-| `summary-row` | Precomputed totals keyed by `header.value`; overrides `Header.summary`; **only** supported source in server mode |
+| `summary-scope` | `'all'` = filtered + sorted dataset; `'page'` = current page only (`default: 'all'`). Client/virtual: table aggregates that set. Server: ignored for a **flat** `summary-row`; nested `{ all, page }` maps honor it. |
+| `summary-row` | Precomputed totals keyed by `header.value`; overrides `Header.summary`; **only** supported source in server mode. Optional nested `{ all?, page? }` when those keys are plain objects (not arrays / primitives). `{ amount: 1, all: 5 }` stays **flat**. |
 | `summary-text` | Label in first empty totals cell (`default: 'Total'`; `''` = no label cell) |
 | `fixed-summary` | Sticky bottom totals row (`default: true`) |
 
-**Server mode:** the table never aggregates partial pages. Pass API totals via `summary-row`. Using `Header.summary` without `summary-row` logs a one-time console warning and renders blank aggregated cells.
+**Client / virtual:** the table aggregates. Virtual does **not** change `<tfoot>` vs client — totals use full `pageItems` / `totalItems`, not the painted window.
+
+**Server mode:** the table never aggregates the loaded page. Pass API totals via `summary-row`. Using `Header.summary` without `summary-row` logs a one-time console warning and renders blank aggregated cells. If `summary-row` is non-null but omits a `Header.summary` key, warn once listing missing keys (`null` is a valid present empty cell). Flat `summary-row` + `summary-scope="page"` warns once (toggling page cannot change those totals).
+
+**`hide-footer`** does not hide `<tfoot>`. Format cells with `#summary-{value}` (or `#summary`, which matches every non-synthetic column and **steals the label** — you render your own). `avg` is a raw float.
 
 **Virtualization:** built-in `<tfoot>` does **not** disable `virtual` (unlike `#body-append` hand-rolled totals).
 
-**Slots:** `#summary-{value}` (per column; also tries lowercase) and `#summary` (fallback for every non-synthetic column — no auto `summary-text` label). Slot props: `{ header, value, items, scope }`. Injected checkbox / index / expand columns stay empty; a data leaf named `index` is still aggregated.
+**Slots:** `#summary-{value}` (per column; also tries lowercase) and `#summary` (fallback for every non-synthetic column — no auto `summary-text` label). Slot props: `{ header, value, items, scope }`. In server mode `items` is `[]`. Injected checkbox / index / expand columns stay empty; a data leaf named `index` is still aggregated.
 
 **Sticky columns:** frozen totals cells reuse header geometry (`getFixedDistance` chain, `fixed-column`, `shadow`, `FIXED_COLUMN_SUMMARY_Z_INDEX`).
 
 **Hand-rolled totals:** `#body-append` + `@update-total-items` (recipe 10) still works as a pre-1.7 workaround.
 
-Exported types: `SummaryAggregation`, `SummaryScope`, `SummaryContext`, `SummaryFn`, `SummaryRow`.
+**1.7.1 (additive):** `'length'` aggregation; named exports `computeSummaryValue`, `isSummaryAggregation`, `resolveHeaderSummary`; optional nested `summary-row` for server `summary-scope`.
+
+Exported types: `SummaryAggregation`, `SummaryScope`, `SummaryContext`, `SummaryFn`, `SummaryRow`. Aggregator helpers are also named exports from the package root.

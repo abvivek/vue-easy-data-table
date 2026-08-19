@@ -237,7 +237,8 @@ export default {
   },
   /**
    * Which rows feed totals in client mode: `all` (filtered + sorted dataset)
-   * or `page` (current page only). Ignored in server mode.
+   * or `page` (current page only). In server mode a **flat** `summary-row` is
+   * used as-is; nested `{ all, page }` maps honor this prop.
    */
   summaryScope: {
     type: String as PropType<SummaryScope>,
@@ -245,7 +246,8 @@ export default {
   },
   /**
    * Precomputed totals keyed by `header.value`. Overrides `Header.summary`
-   * and is the only supported source in server mode.
+   * and is the only supported source in server mode. Optional nested
+   * `{ all, page }` maps (detected only when those keys are plain objects).
    */
   summaryRow: {
     type: Object as PropType<SummaryRow> | null,

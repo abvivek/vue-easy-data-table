@@ -435,6 +435,10 @@ Trade-offs versus the built-in summary row:
 
 Declare `Header.summary` on leaves for client-side aggregations, or pass precomputed `summary-row` in server mode. The row renders as `<tfoot>` (virtual stays on; `#body-append` totals still disable virtual — see recipe 10).
 
+**Client / virtual:** the table aggregates. Virtual does not change `<tfoot>` vs client — totals use the full scoped `pageItems` / `totalItems`, not the painted window.
+
+**Server:** the parent sends `summary-row`; the table never aggregates the loaded page. `#summary*` slot `items` is `[]` in server mode.
+
 ```vue
 <template>
   <EasyDataTable
@@ -444,7 +448,11 @@ Declare `Header.summary` on leaves for client-side aggregations, or pass precomp
     summary-text="Total"
     summary-scope="all"
     :table-height="320"
-  />
+  >
+    <template #summary-qty="{ value }">
+      {{ value == null ? '' : Number(value).toFixed(2) }}
+    </template>
+  </EasyDataTable>
 </template>
 
 <script setup lang="ts">
@@ -455,6 +463,7 @@ const headers: Header[] = [
   { text: 'Amount', value: 'amount', summary: 'sum' },
   { text: 'Qty', value: 'qty', summary: 'avg' },
   { text: 'Status', value: 'status', summary: 'count' },
+  { text: 'Rows', value: 'id', summary: 'length' },
 ];
 
 const items: Item[] = [/* … */];
@@ -463,26 +472,57 @@ const items: Item[] = [/* … */];
 
 | Prop / field | Role |
 | --- | --- |
-| `Header.summary` | `'sum' \| 'avg' \| 'min' \| 'max' \| 'count'` or `(ctx) => value` — **client mode only** |
-| `summary-row` | Precomputed totals keyed by `header.value`; overrides `Header.summary`; **required in server mode** |
-| `summary-scope` | `'all'` (filtered + sorted dataset) or `'page'` (current page) |
+| `Header.summary` | `'sum' \| 'avg' \| 'min' \| 'max' \| 'count' \| 'length'` or `(ctx) => value` — **client mode only**. `count` = non-empty cells; `length` = rows in scope |
+| `summary-row` | Precomputed totals keyed by `header.value`; overrides `Header.summary`; **required in server mode**. Flat map, or optional nested `{ all, page }` |
+| `summary-scope` | `'all'` (filtered + sorted dataset) or `'page'` (current page). Ignored for a **flat** server `summary-row`; nested `{ all, page }` honors it |
 | `summary-text` | Label in the first empty totals cell (`''` disables the label) |
 | `show-summary` | Force `<tfoot>` when only `#summary*` slots fill the row |
 | `fixed-summary` | Sticky bottom totals row (default `true`) |
 
-Custom cell UI: `#summary-{value}` (per column) or `#summary` (fallback for every non-synthetic column — you supply the label). Slot props: `{ header, value, items, scope }`.
+Custom cell UI: `#summary-{value}` (per column; use this to format — `avg` is a raw float) or `#summary` (fallback for **every** non-synthetic column — **steals the label**, you supply it). Slot props: `{ header, value, items, scope }`. **`hide-footer` does not hide `<tfoot>`.**
 
-Server mode never aggregates loaded rows — pass API totals via `summary-row`:
+Server parent: compute totals on the full filtered set (not the page) with `computeSummaryValue`, then pass `summary-row`. Nested `{ all, page }` lets `summary-scope` switch without rebuilding a flat object:
 
 ```vue
-<EasyDataTable
-  v-model:server-options="serverOptions"
-  :server-items-length="total"
-  :items="pageRows"
-  :headers="headers"
-  :summary-row="{ amount: apiTotals.amount }"
-/>
+<template>
+  <EasyDataTable
+    v-model:server-options="serverOptions"
+    :server-items-length="total"
+    :items="pageRows"
+    :headers="headers"
+    :summary-row="summaryRow"
+    summary-scope="all"
+  />
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { computeSummaryValue } from 'vue-easy-data-table';
+import type { Header, Item } from 'vue-easy-data-table';
+
+const headers: Header[] = [
+  { text: 'Amount', value: 'amount', summary: 'sum' },
+  { text: 'Rows', value: 'id', summary: 'length' },
+];
+
+const filteredRows: Item[] = [/* full filtered result, not just this page */];
+const pageRows: Item[] = [/* current page from the API */];
+const total = filteredRows.length;
+
+const summaryRow = computed(() => ({
+  all: {
+    amount: computeSummaryValue('sum', filteredRows, 'amount'),
+    id: computeSummaryValue('length', filteredRows, 'id'),
+  },
+  page: {
+    amount: computeSummaryValue('sum', pageRows, 'amount'),
+    id: computeSummaryValue('length', pageRows, 'id'),
+  },
+}));
+</script>
 ```
+
+A flat `{ amount: apiTotals.amount }` still works exactly as in 1.7.0 (`summary-scope` will not change those cells). Nested form is detected only when `all` and/or `page` is a non-null plain object (not an array). `{ amount: 1, all: 5 }` stays flat.
 
 Frozen columns: totals cells reuse header sticky geometry (`fixed-column`, `shadow` on last frozen).
 
