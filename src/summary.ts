@@ -56,9 +56,9 @@ export function computeSummaryValue(
     case 'avg':
       return numbers.reduce((acc, num) => acc + num, 0) / numbers.length;
     case 'min':
-      return Math.min(...numbers);
+      return numbers.reduce((acc, num) => (num < acc ? num : acc));
     case 'max':
-      return Math.max(...numbers);
+      return numbers.reduce((acc, num) => (num > acc ? num : acc));
     default:
       return null;
   }

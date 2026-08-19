@@ -359,7 +359,7 @@ Additive attributes/keyboard only — class names unchanged. Sortable headers: `
 
 Rendered as `<tfoot class="vue3-easy-data-table__summary">` when any of: `show-summary`, non-`null` `summary-row`, a visible leaf declares `Header.summary`, or a `#summary*` slot is present. **`hide-footer` does not hide the summary row.**
 
-- Cells iterate `headersForRender` (same column order as body). Checkbox, index, and expand synthetic columns render empty.
+- Cells iterate `headersForRender` (same column order as body). Injected checkbox / index / expand columns render empty; a consumer leaf with those `value`s is still aggregated.
 - **`summary-text`** (default `'Total'`) becomes a `<th scope="row">` in the first non-synthetic column with no value and no dedicated slot. `''` skips the label cell.
 - **`summary-row`** overrides `Header.summary` per key. **`#summary-{value}`** overrides both for presentation.
 - **Client mode:** aggregations run over `summary-scope` — `'all'` uses the filtered + sorted dataset (`totalItems`); `'page'` uses `pageItems`.

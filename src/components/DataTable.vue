@@ -563,6 +563,7 @@ const {
   headerColumns,
   headersForRender,
   headerRows,
+  syntheticHeaders,
   updateSortField,
   isMultiSorting,
   getMultiSortNumber,
@@ -854,8 +855,10 @@ const getHeaderCellFixedStyle = (header: HeaderForRender): CSSProperties | undef
  * the sticky `thead` offset are untouched, unlike a `#body-append` row.
  */
 
-/** Synthetic columns have nothing to aggregate; they render empty cells. */
-const SUMMARY_SKIPPED_COLUMNS = ['checkbox', 'index', 'expand'];
+/** Injected checkbox / index / expand columns only — not consumer leaves with those `value`s. */
+const isSyntheticSummaryColumn = (header: HeaderForRender): boolean => (
+  syntheticHeaders.value.includes(header)
+);
 
 type SummaryCell = {
   column: string
@@ -878,7 +881,7 @@ const ifHasSummarySlot = computed(() => Object.keys(slots).some(
 ));
 
 const summaryHeaders = computed((): HeaderForRender[] => headersForRender.value.filter(
-  (header) => !SUMMARY_SKIPPED_COLUMNS.includes(header.value) && header.summary != null,
+  (header) => !isSyntheticSummaryColumn(header) && header.summary != null,
 ));
 
 const shouldRenderSummary = computed((): boolean => showSummary.value
@@ -900,7 +903,7 @@ const summaryCells = computed((): SummaryCell[] => {
   let labelPlaced = !summaryText.value;
 
   return headersForRender.value.map((header): SummaryCell => {
-    const skipped = SUMMARY_SKIPPED_COLUMNS.includes(header.value);
+    const skipped = isSyntheticSummaryColumn(header);
     const slotName = skipped ? null : summarySlotName(header.value);
     let value: string | number | null = null;
 

@@ -79,6 +79,8 @@ describe('summary.ts helpers', () => {
   it('isSummaryAggregation recognizes built-in names only', () => {
     expect(isSummaryAggregation('sum')).toBe(true);
     expect(isSummaryAggregation('avg')).toBe(true);
+    expect(isSummaryAggregation('min')).toBe(true);
+    expect(isSummaryAggregation('max')).toBe(true);
     expect(isSummaryAggregation('count')).toBe(true);
     expect(isSummaryAggregation('total')).toBe(false);
     expect(isSummaryAggregation(null)).toBe(false);
@@ -97,6 +99,12 @@ describe('summary.ts helpers', () => {
   it('min and max over numeric values', () => {
     expect(computeSummaryValue('min', items, 'amount')).toBe(10);
     expect(computeSummaryValue('max', items, 'amount')).toBe(30);
+  });
+
+  it('min and max do not throw RangeError on large arrays', () => {
+    const lots = Array.from({ length: 100_000 }, (_, i) => ({ n: i }));
+    expect(computeSummaryValue('min', lots, 'n')).toBe(0);
+    expect(computeSummaryValue('max', lots, 'n')).toBe(99_999);
   });
 
   it('count counts non-empty values including non-numeric strings', () => {
@@ -306,6 +314,48 @@ describe('DataTable summary row', () => {
     await nextTick();
     expect(summaryRowCells(withRow)[1].text()).toBe('1234');
     expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('aggregates a data column named index (injected synthetics only are skipped)', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Index', value: 'index', summary: 'sum' },
+          { text: 'Name', value: 'name' },
+        ],
+        items: [
+          { index: 1, name: 'A' },
+          { index: 2, name: 'B' },
+        ],
+      },
+    });
+    await nextTick();
+    const cells = summaryRowCells(wrapper);
+    expect(cells).toHaveLength(2);
+    expect(cells[0].text()).toBe('3');
+    expect(cells[1].text()).toBe('Total');
+  });
+
+  it('still aggregates a data column named index when show-index injects a synthetic column', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Index', value: 'index', summary: 'sum' },
+          { text: 'Name', value: 'name' },
+        ],
+        items: [
+          { index: 1, name: 'A' },
+          { index: 2, name: 'B' },
+        ],
+        showIndex: true,
+      },
+    });
+    await nextTick();
+    const cells = summaryRowCells(wrapper);
+    expect(cells).toHaveLength(3);
+    expect(cells[0].text()).toBe('');
+    expect(cells[1].text()).toBe('3');
+    expect(cells[2].text()).toBe('Total');
   });
 
   it('synthetic checkbox, index, and expand columns are empty; cell count matches body', async () => {

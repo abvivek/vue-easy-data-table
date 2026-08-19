@@ -60,7 +60,8 @@
     }
   }
   &.hoverable {
-    :deep(tr:hover td) {
+    /* Body only — tfoot summary cells must keep their own background. */
+    .vue3-easy-data-table__body :deep(tr:hover td) {
       background-color: var(--easy-table-body-row-hover-background-color);
       color: var(--easy-table-body-row-hover-font-color);
     }
@@ -280,8 +281,8 @@ table {
   height: var(--easy-table-body-row-height);
 }
 
-/* Three classes so these beat `.fixed-header th` (sticky top) and
-   `.hoverable tr:hover td` on specificity, without !important. */
+/* Nested under `__main` so these beat `.fixed-header th` (sticky top)
+   without !important. Hover is scoped to tbody, so it cannot restyle tfoot. */
 .vue3-easy-data-table__main .vue3-easy-data-table__summary {
   th.summary-cell, td.summary-cell {
     position: static;

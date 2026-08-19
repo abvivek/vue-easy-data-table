@@ -215,6 +215,7 @@ export default function useHeaders(
     headerColumns,
     headersForRender,
     headerRows,
+    syntheticHeaders,
     updateSortField,
     isMultiSorting,
     getMultiSortNumber,

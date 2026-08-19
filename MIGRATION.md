@@ -276,7 +276,7 @@ No breaking API. Omit new fields for identical behavior (no `<tfoot>`).
 
 **Virtualization:** built-in `<tfoot>` does **not** disable `virtual` (unlike `#body-append` hand-rolled totals).
 
-**Slots:** `#summary-{value}` (per column; also tries lowercase) and `#summary` (fallback for every non-synthetic column — no auto `summary-text` label). Slot props: `{ header, value, items, scope }`.
+**Slots:** `#summary-{value}` (per column; also tries lowercase) and `#summary` (fallback for every non-synthetic column — no auto `summary-text` label). Slot props: `{ header, value, items, scope }`. Injected checkbox / index / expand columns stay empty; a data leaf named `index` is still aggregated.
 
 **Sticky columns:** frozen totals cells reuse header geometry (`getFixedDistance` chain, `fixed-column`, `shadow`, `FIXED_COLUMN_SUMMARY_Z_INDEX`).
 
