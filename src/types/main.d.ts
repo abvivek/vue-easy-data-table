@@ -30,7 +30,7 @@ export type FilterOption = {
 export type HeaderSortCompare = (a: Item, b: Item) => number
 
 /** Built-in totals-row aggregations for `Header.summary`. */
-export type SummaryAggregation = 'sum' | 'avg' | 'min' | 'max' | 'count'
+export type SummaryAggregation = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'length'
 
 /**
  * Which rows feed the totals row (client mode).
@@ -52,8 +52,13 @@ export type SummaryFn = (ctx: SummaryContext) => string | number | null
 /**
  * Precomputed totals keyed by `header.value`. Overrides `Header.summary`,
  * and is the only supported source in server mode.
+ *
+ * Nested `{ all, page }` is detected only when `all` and/or `page` is a
+ * non-null plain object (not an array). `{ amount: 1, all: 5 }` stays flat.
  */
-export type SummaryRow = Record<string, string | number | null>
+export type SummaryRow =
+  | Record<string, string | number | null>
+  | { all?: Record<string, string | number | null>; page?: Record<string, string | number | null> }
 
 export type Header = {
   text: string
@@ -128,3 +133,16 @@ export type ItemKey = string
  * Requires a positive `virtualRowHeight`. See MIGRATION.md for fallback rules.
  */
 export type Virtual = boolean
+
+export declare function isSummaryAggregation(value: unknown): value is SummaryAggregation
+
+export declare function computeSummaryValue(
+  aggregation: SummaryAggregation,
+  items: Item[],
+  column: string,
+): number | null
+
+export declare function resolveHeaderSummary(
+  summary: SummaryAggregation | SummaryFn | undefined,
+  context: SummaryContext,
+): string | number | null

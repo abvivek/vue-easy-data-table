@@ -7,3 +7,8 @@ if (typeof window !== 'undefined' && window.Vue) {
 
 export default DataTable;
 export { DataTable as Vue3EasyDataTable };
+export {
+  computeSummaryValue,
+  isSummaryAggregation,
+  resolveHeaderSummary,
+} from './summary';

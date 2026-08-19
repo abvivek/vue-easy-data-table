@@ -11,7 +11,7 @@
 
 A Vue 3 data table with sorting, search, pagination, selection, fixed columns, and slots — plus opt-in virtual rows, grouped headers, and better server-side DX.
 
-This is an actively maintained fork of [`vue3-easy-data-table`](https://github.com/HC200ok/vue3-easy-data-table). **1.7.0** is drop-in compatible with upstream 1.5.x; new APIs are additive.
+This is an actively maintained fork of [`vue3-easy-data-table`](https://github.com/HC200ok/vue3-easy-data-table). **1.7.1** is drop-in compatible with upstream 1.5.x; new APIs are additive.
 
 ```bash
 npm install vue-easy-data-table
@@ -25,9 +25,9 @@ npm install vue-easy-data-table
 
 Upstream last published in 2023. This package keeps the same component API and CSS class hooks, and ships fixes plus features that were stuck as README todos:
 
-| 1.7.0 | What you get |
+| 1.7.1 | What you get |
 | --- | --- |
-| **Summary row** | Built-in `<tfoot>` totals (`Header.summary`, `summary-row`, `#summary*` slots); virtual stays on |
+| **Summary row** | Built-in `<tfoot>` totals (`Header.summary` including `length`, `summary-row`, named `computeSummaryValue` export, `#summary*` slots); virtual stays on |
 | **`item-key`** | Stable row identity for selection, expand, and virtual tables (skip slow `JSON.stringify`) |
 | **Virtual rows** | Opt-in windowing of the current page (`virtual` + `virtual-row-height`) |
 | **Server DX** | Footer page tracks `serverOptions.page`; custom `serverOptions` fields are preserved; `server-select-all` |
@@ -54,7 +54,7 @@ app.component('EasyDataTable', Vue3EasyDataTable);
 // or: import { Vue3EasyDataTable as EasyDataTable } from 'vue-easy-data-table';
 ```
 
-Types (`Header`, `Item`, `ServerOptions`, …) come from the package root.
+Types (`Header`, `Item`, `ServerOptions`, …) and aggregator helpers (`computeSummaryValue`, …) come from the package root.
 
 ## Quick start
 
@@ -105,7 +105,7 @@ Full props / slots / emits / CSS variables: **[docs/API.md](./docs/API.md)**.
 | Layout | `table-height`, alternating rows, border cells, theme color, class-name hooks |
 | Virtual rows | `:virtual="true"` + `:virtual-row-height` + preferably `table-height` and `item-key` |
 | Grouped headers | `Header.children` (prefer this over `#customize-headers` for groups) |
-| Summary row | `Header.summary` aggregations, `summary-row`, `#summary*` slots; sticky with fixed columns |
+| Summary row | `Header.summary` aggregations (`sum`/`avg`/`min`/`max`/`count`/`length`), `summary-row`, `#summary*` slots; sticky with fixed columns |
 
 Use **`item-key`** (`"id"`, `"meta.uuid"`, …) on large, selectable, or virtual tables.
 

@@ -390,7 +390,7 @@ import type { Header, Item, SortType } from '../types/main';
 import type { HeaderForRender } from '../types/internal';
 
 import { getItemIdentity } from '../utils';
-import { resolveHeaderSummary } from '../summary';
+import { resolveHeaderSummary, resolveSummaryRowMap, isNestedSummaryRow } from '../summary';
 import {
   DEFAULT_CELL_HORIZONTAL_PADDING_PX,
   FIXED_COLUMN_BODY_Z_INDEX,
@@ -897,8 +897,8 @@ const summaryItems = computed((): Item[] => {
 
 const summaryCells = computed((): SummaryCell[] => {
   if (!shouldRenderSummary.value) return [];
-  const overrides = summaryRow.value;
   const scope = summaryScope.value;
+  const overrides = resolveSummaryRowMap(summaryRow.value, scope);
   const items = summaryItems.value;
   let labelPlaced = !summaryText.value;
 
@@ -951,6 +951,44 @@ watch(() => isServerSideMode.value && summaryRow.value === null && summaryHeader
       + 'current page is loaded. Pass precomputed totals via `summary-row`. See MIGRATION.md.',
     );
   }, { immediate: true });
+
+let serverFlatPageScopeWarned = false;
+watch(
+  () => isServerSideMode.value
+    && summaryScope.value === 'page'
+    && summaryRow.value !== null
+    && !isNestedSummaryRow(summaryRow.value),
+  (shouldWarn) => {
+    if (!shouldWarn || serverFlatPageScopeWarned) return;
+    serverFlatPageScopeWarned = true;
+    console.warn(
+      '[vue-easy-data-table] summary-scope="page" is ignored in server mode when `summary-row` '
+      + 'is a flat object. Pass `{ all, page }` maps if page totals should differ. See MIGRATION.md.',
+    );
+  },
+  { immediate: true },
+);
+
+let serverMissingSummaryKeysWarned = false;
+watch(
+  () => {
+    if (!isServerSideMode.value || summaryRow.value === null) return '';
+    const resolved = resolveSummaryRowMap(summaryRow.value, summaryScope.value) ?? {};
+    return summaryHeaders.value
+      .map((header) => header.value)
+      .filter((key) => !Object.prototype.hasOwnProperty.call(resolved, key))
+      .join(', ');
+  },
+  (missing) => {
+    if (!missing || serverMissingSummaryKeysWarned) return;
+    serverMissingSummaryKeysWarned = true;
+    console.warn(
+      `[vue-easy-data-table] Header.summary columns missing from summary-row: ${missing}. `
+      + 'Pass those keys (null is a valid empty cell). See MIGRATION.md.',
+    );
+  },
+  { immediate: true },
+);
 
 /** Frozen totals cells reuse header geometry so the row cannot drift sideways. */
 const getSummaryCellFixedStyle = (column: string): CSSProperties | undefined => {

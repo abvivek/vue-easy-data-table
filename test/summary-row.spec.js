@@ -10,9 +10,12 @@ import { mount } from '@vue/test-utils';
 import DataTable from '../src/components/DataTable.vue';
 import {
   computeSummaryValue,
+  isNestedSummaryRow,
   isSummaryAggregation,
   resolveHeaderSummary,
+  resolveSummaryRowMap,
 } from '../src/summary';
+import { computeSummaryValue as computeSummaryValueFromIndex } from '../src/index';
 import { FIXED_COLUMN_SUMMARY_Z_INDEX } from '../src/stickyColumns';
 
 const baseItems = [
@@ -82,6 +85,7 @@ describe('summary.ts helpers', () => {
     expect(isSummaryAggregation('min')).toBe(true);
     expect(isSummaryAggregation('max')).toBe(true);
     expect(isSummaryAggregation('count')).toBe(true);
+    expect(isSummaryAggregation('length')).toBe(true);
     expect(isSummaryAggregation('total')).toBe(false);
     expect(isSummaryAggregation(null)).toBe(false);
   });
@@ -110,6 +114,38 @@ describe('summary.ts helpers', () => {
   it('count counts non-empty values including non-numeric strings', () => {
     expect(computeSummaryValue('count', items, 'note')).toBe(2);
     expect(computeSummaryValue('count', items, 'score')).toBe(3);
+  });
+
+  it('length is items.length including empty cells; count stays filled-cell count', () => {
+    const withNulls = [
+      { id: 1, note: 'a' },
+      { id: 2, note: null },
+      { id: 3, note: '' },
+    ];
+    expect(computeSummaryValue('length', withNulls, 'note')).toBe(3);
+    expect(computeSummaryValue('length', [], 'note')).toBe(0);
+    expect(computeSummaryValue('count', withNulls, 'note')).toBe(1);
+    expect(computeSummaryValue('count', withNulls, 'note'))
+      .toBeLessThan(computeSummaryValue('length', withNulls, 'note'));
+  });
+
+  it('exports computeSummaryValue from the package root', () => {
+    expect(computeSummaryValueFromIndex('length', [{ id: 1 }, { id: 2 }], 'id')).toBe(2);
+  });
+
+  it('treats { amount, all: number } as a flat map, not nested { all, page }', () => {
+    const flat = { amount: 10, all: 5 };
+    expect(isNestedSummaryRow(flat)).toBe(false);
+    expect(isNestedSummaryRow({ all: { amount: 1 }, page: { amount: 2 } })).toBe(true);
+    expect(isNestedSummaryRow({ all: { amount: 1 } })).toBe(true);
+    expect(isNestedSummaryRow({ page: { amount: 2 } })).toBe(true);
+    expect(isNestedSummaryRow({ all: null, page: 3 })).toBe(false);
+    expect(isNestedSummaryRow({ all: [1, 2] })).toBe(false);
+    expect(isNestedSummaryRow({ page: [] })).toBe(false);
+    expect(resolveSummaryRowMap(flat, 'page')).toEqual(flat);
+    expect(resolveSummaryRowMap({ all: { amount: 1 }, page: { amount: 2 } }, 'page'))
+      .toEqual({ amount: 2 });
+    expect(resolveSummaryRowMap({ all: { amount: 1 } }, 'page')).toEqual({ amount: 1 });
   });
 
   it('returns null for empty numeric columns', () => {
@@ -308,7 +344,7 @@ describe('DataTable summary row', () => {
         items: baseItems.slice(0, 2),
         serverOptions: { page: 1, rowsPerPage: 10 },
         serverItemsLength: 100,
-        summaryRow: { amount: 1234 },
+        summaryRow: { amount: 1234, score: null, note: null },
       },
     });
     await nextTick();
@@ -408,6 +444,7 @@ describe('DataTable summary row', () => {
   });
 
   it('keeps virtual active with summary (unlike body-append)', async () => {
+    // Totals use the full pageItems/totalItems set, not the painted virtual window.
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const wrapper = mount(DataTable, {
       props: {
@@ -548,5 +585,206 @@ describe('DataTable summary row', () => {
     await nextTick();
     expect(wrapper.find('.vue3-easy-data-table__footer').exists()).toBe(false);
     expect(wrapper.find('tfoot.vue3-easy-data-table__summary').exists()).toBe(true);
+  });
+
+  it('recomputes aggregations when items are replaced without remount', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Amount', value: 'amount', summary: 'sum' },
+          { text: 'Note', value: 'note', summary: 'count' },
+        ],
+        items: [
+          { name: 'A', amount: 10, note: 'x' },
+          { name: 'B', amount: 20, note: 'y' },
+          { name: 'C', amount: 30, note: null },
+        ],
+      },
+    });
+    await nextTick();
+    let cells = summaryRowCells(wrapper);
+    expect(cells[1].text()).toBe('60');
+    expect(cells[2].text()).toBe('2');
+
+    await wrapper.setProps({ items: [{ name: 'A', amount: 10, note: 'x' }] });
+    await nextTick();
+    cells = summaryRowCells(wrapper);
+    expect(cells[1].text()).toBe('10');
+    expect(cells[2].text()).toBe('1');
+  });
+
+  it('updates cells when summary-row is replaced without remount', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Amount', value: 'amount', summary: 'sum' },
+        ],
+        items: [{ name: 'A', amount: 10 }],
+        summaryRow: { amount: 1 },
+      },
+    });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('1');
+
+    await wrapper.setProps({ summaryRow: { amount: 2 } });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('2');
+  });
+
+  it('server + flat summary-row: toggling summary-scope does not change cells', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Amount', value: 'amount', summary: 'sum' },
+        ],
+        items: [{ name: 'A', amount: 10 }],
+        serverOptions: { page: 1, rowsPerPage: 10 },
+        serverItemsLength: 100,
+        summaryRow: { amount: 50 },
+        summaryScope: 'all',
+      },
+    });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('50');
+    expect(warn.mock.calls.some((call) => String(call[0]).includes('summary-scope="page"'))).toBe(false);
+
+    await wrapper.setProps({ summaryScope: 'page' });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('50');
+    expect(warn.mock.calls.some((call) => String(call[0]).includes('summary-scope="page"'))).toBe(true);
+  });
+
+  it('server + nested { all, page }: toggling summary-scope changes cells', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Amount', value: 'amount', summary: 'sum' },
+        ],
+        items: [{ name: 'A', amount: 10 }],
+        serverOptions: { page: 1, rowsPerPage: 10 },
+        serverItemsLength: 100,
+        summaryRow: { all: { amount: 100 }, page: { amount: 10 } },
+        summaryScope: 'all',
+      },
+    });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('100');
+
+    await wrapper.setProps({ summaryScope: 'page' });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('10');
+    expect(warn.mock.calls.some((call) => String(call[0]).includes('summary-scope="page"'))).toBe(false);
+  });
+
+  it('client + nested { all, page }: toggling summary-scope changes cells', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Amount', value: 'amount', summary: 'sum' },
+        ],
+        items: [
+          { name: 'A', amount: 10 },
+          { name: 'B', amount: 20 },
+        ],
+        rowsPerPage: 1,
+        summaryRow: { all: { amount: 100 }, page: { amount: 10 } },
+        summaryScope: 'all',
+      },
+    });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('100');
+
+    await wrapper.setProps({ summaryScope: 'page' });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('10');
+  });
+
+  it('count vs length: null cells make count smaller than items.length', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name', summary: 'length' },
+          { text: 'Note', value: 'note', summary: 'count' },
+        ],
+        items: [
+          { name: 'A', note: 'ok' },
+          { name: 'B', note: null },
+          { name: 'C', note: '' },
+        ],
+      },
+    });
+    await nextTick();
+    const cells = summaryRowCells(wrapper);
+    expect(cells[0].text()).toBe('3');
+    expect(cells[1].text()).toBe('1');
+  });
+
+  it('flat map with numeric all still uses amount as a column', async () => {
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Amount', value: 'amount', summary: 'sum' },
+        ],
+        items: [{ name: 'A', amount: 1 }],
+        summaryRow: { amount: 10, all: 5 },
+      },
+    });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('10');
+  });
+
+  it('server mode: warns once when Header.summary keys are missing from summary-row', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const wrapper = mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Amount', value: 'amount', summary: 'sum' },
+          { text: 'Score', value: 'score', summary: 'avg' },
+        ],
+        items: [{ name: 'A', amount: 10, score: 1 }],
+        serverOptions: { page: 1, rowsPerPage: 10 },
+        serverItemsLength: 100,
+        summaryRow: { amount: 10 },
+      },
+    });
+    await nextTick();
+    expect(summaryRowCells(wrapper)[1].text()).toBe('10');
+    expect(summaryRowCells(wrapper)[2].text()).toBe('');
+    const missing = warn.mock.calls.filter((call) => String(call[0]).includes('missing from summary-row'));
+    expect(missing).toHaveLength(1);
+    expect(String(missing[0][0])).toContain('score');
+    expect(String(missing[0][0])).not.toContain('amount');
+
+    warn.mockClear();
+    await wrapper.setProps({ summaryRow: { amount: 11 } });
+    await nextTick();
+    expect(warn.mock.calls.filter((call) => String(call[0]).includes('missing from summary-row'))).toHaveLength(0);
+  });
+
+  it('server mode: present null keys do not trigger the missing-key warning', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mount(DataTable, {
+      props: {
+        headers: [
+          { text: 'Name', value: 'name' },
+          { text: 'Amount', value: 'amount', summary: 'sum' },
+        ],
+        items: [{ name: 'A', amount: 10 }],
+        serverOptions: { page: 1, rowsPerPage: 10 },
+        serverItemsLength: 100,
+        summaryRow: { amount: null },
+      },
+    });
+    await nextTick();
+    expect(warn.mock.calls.some((call) => String(call[0]).includes('missing from summary-row'))).toBe(false);
   });
 });
