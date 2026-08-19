@@ -105,7 +105,7 @@ table {
   margin: 0px;
 }
 // fixed-columns feature related
-.vue3-easy-data-table__header, .vue3-easy-data-table__body {
+.vue3-easy-data-table__header, .vue3-easy-data-table__body, .vue3-easy-data-table__summary {
   position: relative;
 }
 .vue3-easy-data-table__header tr {
@@ -180,7 +180,8 @@ table {
 
 // fixed-columns feature related
 .vue3-easy-data-table__main :deep(th.shadow),
-.vue3-easy-data-table__body :deep(td.shadow) {
+.vue3-easy-data-table__body :deep(td.shadow),
+.vue3-easy-data-table__summary td.shadow {
   &::after {
     pointer-events: none;
     content: "";
@@ -274,6 +275,57 @@ table {
   cursor: pointer;
 }
 
+// totals (summary) row — own markup, so no :deep needed
+.vue3-easy-data-table__summary tr {
+  height: var(--easy-table-body-row-height);
+}
+
+/* Three classes so these beat `.fixed-header th` (sticky top) and
+   `.hoverable tr:hover td` on specificity, without !important. */
+.vue3-easy-data-table__main .vue3-easy-data-table__summary {
+  th.summary-cell, td.summary-cell {
+    position: static;
+    top: auto;
+    background-color: var(--easy-table-summary-background-color);
+    color: var(--easy-table-summary-font-color);
+    font-size: var(--easy-table-summary-font-size);
+    font-weight: var(--easy-table-summary-font-weight);
+    padding: var(--easy-table-summary-item-padding);
+    border: none;
+    border-top: var(--easy-table-row-border);
+
+    &.direction-left {
+      text-align: left;
+    }
+    &.direction-center {
+      text-align: center;
+    }
+    &.direction-right {
+      text-align: right;
+    }
+  }
+}
+
+/* fixed-summary: stick to the bottom of the scroll container (SUMMARY_ROW_Z_INDEX).
+   Frozen cells override z-index inline with FIXED_COLUMN_SUMMARY_Z_INDEX. */
+.vue3-easy-data-table__main .vue3-easy-data-table__summary.fixed-summary {
+  th.summary-cell, td.summary-cell {
+    position: sticky;
+    top: auto;
+    bottom: 0;
+    z-index: 3;
+  }
+}
+
+.vue3-easy-data-table__main.border-cell .vue3-easy-data-table__summary {
+  th.summary-cell, td.summary-cell {
+    border-right: var(--easy-table-row-border);
+  }
+  th.summary-cell:last-child, td.summary-cell:last-child {
+    border-right: none;
+  }
+}
+
 .vue3-easy-data-table__footer {
   background-color: var(--easy-table-footer-background-color);
   color: var(--easy-table-footer-font-color);
@@ -307,7 +359,8 @@ table {
     }
   }
   .vue3-easy-data-table__main :deep(th.shadow)::after,
-  .vue3-easy-data-table__body :deep(td.shadow)::after {
+  .vue3-easy-data-table__body :deep(td.shadow)::after,
+  .vue3-easy-data-table__summary td.shadow::after {
     right: auto;
     left: -36px;
   }

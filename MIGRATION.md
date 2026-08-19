@@ -258,3 +258,28 @@ const headers: Header[] = [
 Frozen custom `<th>` must apply `:style="getHeaderCellFixedStyle(header)"` and class `fixed-column` (plus `shadow` on the last fixed leaf/group). Do not reimplement painted-width `left`. `.fixed-header th` stays vertically sticky (`z-index` 3 / `STICKY_HEADER_Z_INDEX`); `th.fixed-column` wins at `z-index` 4 (`FIXED_COLUMN_HEADER_Z_INDEX`) with an opaque header background. Those rules pierce via `:deep()` so slotted `#customize-headers` cells match.
 
 CSS class hooks (`vue3-easy-data-table__header`, `sortable`, `direction-*`) are unchanged. Sort still lives on sortable leaves, not group parent cells.
+
+### Additive (Phase 7) — totals (summary) row
+
+No breaking API. Omit new fields for identical behavior (no `<tfoot>`).
+
+| Field / prop | Effect |
+| --- | --- |
+| `Header.summary` | Totals cell: `'sum' \| 'avg' \| 'min' \| 'max' \| 'count'` or `SummaryFn` on a **leaf** column. Renders `<tfoot>` when any visible leaf declares it. **Client mode only.** |
+| `show-summary` | Force totals row when only `#summary*` slots fill cells (`default: false`) |
+| `summary-scope` | `'all'` = filtered + sorted dataset; `'page'` = current page only (`default: 'all'`) |
+| `summary-row` | Precomputed totals keyed by `header.value`; overrides `Header.summary`; **only** supported source in server mode |
+| `summary-text` | Label in first empty totals cell (`default: 'Total'`; `''` = no label cell) |
+| `fixed-summary` | Sticky bottom totals row (`default: true`) |
+
+**Server mode:** the table never aggregates partial pages. Pass API totals via `summary-row`. Using `Header.summary` without `summary-row` logs a one-time console warning and renders blank aggregated cells.
+
+**Virtualization:** built-in `<tfoot>` does **not** disable `virtual` (unlike `#body-append` hand-rolled totals).
+
+**Slots:** `#summary-{value}` (per column; also tries lowercase) and `#summary` (fallback for every non-synthetic column — no auto `summary-text` label). Slot props: `{ header, value, items, scope }`.
+
+**Sticky columns:** frozen totals cells reuse header geometry (`getFixedDistance` chain, `fixed-column`, `shadow`, `FIXED_COLUMN_SUMMARY_Z_INDEX`).
+
+**Hand-rolled totals:** `#body-append` + `@update-total-items` (recipe 10) still works as a pre-1.7 workaround.
+
+Exported types: `SummaryAggregation`, `SummaryScope`, `SummaryContext`, `SummaryFn`, `SummaryRow`.

@@ -29,6 +29,32 @@ export type FilterOption = {
 /** Client-side compare: negative if `a` precedes `b` in ascending order. */
 export type HeaderSortCompare = (a: Item, b: Item) => number
 
+/** Built-in totals-row aggregations for `Header.summary`. */
+export type SummaryAggregation = 'sum' | 'avg' | 'min' | 'max' | 'count'
+
+/**
+ * Which rows feed the totals row (client mode).
+ * - `all` (default): filtered + sorted dataset.
+ * - `page`: current page only.
+ */
+export type SummaryScope = 'page' | 'all'
+
+export type SummaryContext = {
+  /** Rows in scope (see `SummaryScope`). */
+  items: Item[]
+  header: Header
+  scope: SummaryScope
+}
+
+/** Custom totals cell. Return `null` for an empty cell. */
+export type SummaryFn = (ctx: SummaryContext) => string | number | null
+
+/**
+ * Precomputed totals keyed by `header.value`. Overrides `Header.summary`,
+ * and is the only supported source in server mode.
+ */
+export type SummaryRow = Record<string, string | number | null>
+
 export type Header = {
   text: string
   value: string
@@ -53,6 +79,11 @@ export type Header = {
    * Ignored in server mode (parent owns sort).
    */
   sort?: HeaderSortCompare
+  /**
+   * Totals-row cell for this column: a built-in aggregation name or a custom
+   * function. Client mode only — server mode must supply `summary-row`.
+   */
+  summary?: SummaryAggregation | SummaryFn
   /** Nested group headers. Only leaves (no children) are body columns. */
   children?: Header[]
 }

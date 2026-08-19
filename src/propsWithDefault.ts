@@ -2,7 +2,7 @@ import { PropType } from 'vue';
 import type {
   SortType, Item, ServerOptions, ServerSelectAll, FilterOption,
   HeaderItemClassNameFunction, BodyItemClassNameFunction, BodyRowClassNameFunction,
-  TextDirection,
+  TextDirection, SummaryRow, SummaryScope,
 } from './types/main';
 import type { ClickEventType } from './types/internal';
 
@@ -226,6 +226,40 @@ export default {
   preventContextMenuRow: {
     type: Boolean,
     default: true
+  },
+  /**
+   * Force the totals `<tfoot>` even when no column declares `summary`
+   * (useful when the row is filled by `#summary-{value}` slots only).
+   */
+  showSummary: {
+    type: Boolean,
+    default: false,
+  },
+  /**
+   * Which rows feed totals in client mode: `all` (filtered + sorted dataset)
+   * or `page` (current page only). Ignored in server mode.
+   */
+  summaryScope: {
+    type: String as PropType<SummaryScope>,
+    default: 'all',
+  },
+  /**
+   * Precomputed totals keyed by `header.value`. Overrides `Header.summary`
+   * and is the only supported source in server mode.
+   */
+  summaryRow: {
+    type: Object as PropType<SummaryRow> | null,
+    default: null,
+  },
+  /** Label rendered in the first totals cell that has no value of its own. */
+  summaryText: {
+    type: String,
+    default: 'Total',
+  },
+  /** Stick the totals row to the bottom of the scroll container. */
+  fixedSummary: {
+    type: Boolean,
+    default: true,
   },
   /**
    * Opt-in tbody row virtualization over `pageItems`.

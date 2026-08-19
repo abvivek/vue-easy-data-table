@@ -236,6 +236,49 @@
             }"
           />
         </tbody>
+        <tfoot
+          v-if="shouldRenderSummary"
+          class="vue3-easy-data-table__summary"
+          :class="{ 'fixed-summary': fixedSummary }"
+        >
+          <tr>
+            <template
+              v-for="cell in summaryCells"
+              :key="cell.column"
+            >
+              <th
+                v-if="cell.isLabel"
+                scope="row"
+                class="summary-cell summary-label"
+                :class="[{
+                  'fixed-column': !!getSummaryCellFixedStyle(cell.column),
+                  'shadow': cell.column === lastFixedColumn,
+                }, `direction-${cell.header.align || bodyTextDirection}`, cell.header.className]"
+                :style="getSummaryCellFixedStyle(cell.column)"
+              >
+                {{ summaryText }}
+              </th>
+              <td
+                v-else
+                class="summary-cell"
+                :class="[{
+                  'fixed-column': !!getSummaryCellFixedStyle(cell.column),
+                  'shadow': cell.column === lastFixedColumn,
+                }, `direction-${cell.header.align || bodyTextDirection}`, cell.header.className]"
+                :style="getSummaryCellFixedStyle(cell.column)"
+              >
+                <slot
+                  v-if="cell.slotName"
+                  :name="cell.slotName"
+                  v-bind="summarySlotProps(cell)"
+                />
+                <template v-else-if="cell.value !== null">
+                  {{ cell.value }}
+                </template>
+              </td>
+            </template>
+          </tr>
+        </tfoot>
       </table>
       <div
         v-if="loading"
@@ -347,10 +390,12 @@ import type { Header, Item, SortType } from '../types/main';
 import type { HeaderForRender } from '../types/internal';
 
 import { getItemIdentity } from '../utils';
+import { resolveHeaderSummary } from '../summary';
 import {
   DEFAULT_CELL_HORIZONTAL_PADDING_PX,
   FIXED_COLUMN_BODY_Z_INDEX,
   FIXED_COLUMN_HEADER_Z_INDEX,
+  FIXED_COLUMN_SUMMARY_Z_INDEX,
   readCellHorizontalPadding,
   readPaintedColumnWidths,
   resolveColumnPaintedWidth,
@@ -399,8 +444,13 @@ const {
   serverOptions,
   serverSelectAll,
   showIndex,
+  showSummary,
   sortBy,
   sortType,
+  summaryScope,
+  summaryRow,
+  summaryText,
+  fixedSummary,
   tableHeight,
   tableMinHeight,
   themeColor,
@@ -797,6 +847,115 @@ const getHeaderCellFixedStyle = (header: HeaderForRender): CSSProperties | undef
   return getFixedDistance(header.value);
 };
 
+/**
+ * Totals (summary) row.
+ *
+ * Rendered as `<tfoot>` so it lives outside `tbody`: virtual spacer math and
+ * the sticky `thead` offset are untouched, unlike a `#body-append` row.
+ */
+
+/** Synthetic columns have nothing to aggregate; they render empty cells. */
+const SUMMARY_SKIPPED_COLUMNS = ['checkbox', 'index', 'expand'];
+
+type SummaryCell = {
+  column: string
+  header: HeaderForRender
+  value: string | number | null
+  isLabel: boolean
+  slotName: string | null
+};
+
+const summarySlotName = (column: string): string | null => {
+  if (slots[`summary-${column}`]) return `summary-${column}`;
+  const lowercased = column.toLowerCase();
+  if (slots[`summary-${lowercased}`]) return `summary-${lowercased}`;
+  if (slots.summary) return 'summary';
+  return null;
+};
+
+const ifHasSummarySlot = computed(() => Object.keys(slots).some(
+  (name) => name === 'summary' || name.startsWith('summary-'),
+));
+
+const summaryHeaders = computed((): HeaderForRender[] => headersForRender.value.filter(
+  (header) => !SUMMARY_SKIPPED_COLUMNS.includes(header.value) && header.summary != null,
+));
+
+const shouldRenderSummary = computed((): boolean => showSummary.value
+  || summaryRow.value !== null
+  || summaryHeaders.value.length > 0
+  || ifHasSummarySlot.value);
+
+/** Rows fed to aggregations: the filtered + sorted set, or just this page. */
+const summaryItems = computed((): Item[] => {
+  if (isServerSideMode.value) return [];
+  return summaryScope.value === 'page' ? pageItems.value : totalItems.value;
+});
+
+const summaryCells = computed((): SummaryCell[] => {
+  if (!shouldRenderSummary.value) return [];
+  const overrides = summaryRow.value;
+  const scope = summaryScope.value;
+  const items = summaryItems.value;
+  let labelPlaced = !summaryText.value;
+
+  return headersForRender.value.map((header): SummaryCell => {
+    const skipped = SUMMARY_SKIPPED_COLUMNS.includes(header.value);
+    const slotName = skipped ? null : summarySlotName(header.value);
+    let value: string | number | null = null;
+
+    if (!skipped) {
+      if (overrides && Object.prototype.hasOwnProperty.call(overrides, header.value)) {
+        value = overrides[header.value] ?? null;
+      } else if (!isServerSideMode.value) {
+        // Server mode never aggregates a partial page: a wrong grand total is
+        // worse than an empty cell.
+        value = resolveHeaderSummary(header.summary, {
+          items,
+          header: header as Header,
+          scope,
+        });
+      }
+    }
+
+    const isLabel = !labelPlaced && !skipped && value === null && !slotName;
+    if (isLabel) labelPlaced = true;
+
+    return {
+      column: header.value, header, value, isLabel, slotName,
+    };
+  });
+});
+
+/**
+ * Loosely typed on purpose: a dynamic `<slot :name>` would otherwise widen the
+ * component's whole slot map to these props and break `#item-*` inference.
+ */
+const summarySlotProps = (cell: SummaryCell): Record<string, any> => ({
+  header: cell.header,
+  value: cell.value,
+  items: summaryItems.value,
+  scope: summaryScope.value,
+});
+
+let serverSummaryWarned = false;
+watch(() => isServerSideMode.value && summaryRow.value === null && summaryHeaders.value.length > 0,
+  (conflict) => {
+    if (!conflict || serverSummaryWarned) return;
+    serverSummaryWarned = true;
+    console.warn(
+      '[vue-easy-data-table] Header.summary is ignored in server mode because only the '
+      + 'current page is loaded. Pass precomputed totals via `summary-row`. See MIGRATION.md.',
+    );
+  }, { immediate: true });
+
+/** Frozen totals cells reuse header geometry so the row cannot drift sideways. */
+const getSummaryCellFixedStyle = (column: string): CSSProperties | undefined => {
+  const style = getFixedDistance(column, 'th');
+  if (!style) return undefined;
+  return { ...style, zIndex: FIXED_COLUMN_SUMMARY_Z_INDEX };
+};
+
 watch(loading, (newVal, oldVal) => {
   if (serverOptionsComputed.value) {
     // Belt-and-suspenders: also sync page when the fetch finishes.
@@ -886,6 +1045,12 @@ defineExpose({
     --easy-table-body-even-row-background-color: #fafafa;
     /*body-item*/
     --easy-table-body-item-padding: 0px 10px;
+    /*summary-row*/
+    --easy-table-summary-background-color: #fff;
+    --easy-table-summary-font-color: #212121;
+    --easy-table-summary-font-size: 12px;
+    --easy-table-summary-font-weight: 600;
+    --easy-table-summary-item-padding: 0px 10px;
     /*footer*/
     --easy-table-footer-background-color: #fff;
     --easy-table-footer-font-color: #212121;

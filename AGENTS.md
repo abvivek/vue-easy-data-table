@@ -11,7 +11,7 @@ Actively maintained fork/successor of [`vue3-easy-data-table`](https://github.co
 | **npm package** | `vue-easy-data-table` |
 | **Default export** | `Vue3EasyDataTable` (register as `EasyDataTable` if you prefer) |
 | **Named export** | `{ Vue3EasyDataTable }` |
-| **Public API** | Drop-in compatible with upstream; additive props only in 1.6.x |
+| **Public API** | Drop-in compatible with upstream; additive props through 1.7.x |
 
 ## Install + import
 
@@ -35,7 +35,7 @@ Types (`Header`, `Item`, `ServerOptions`, …) come from the package root / `typ
 
 1. **Do not break the public API** — props, slots, emits, CSS class hooks stay compatible with upstream unless a major version says otherwise. Additive changes only on the 1.6.x path.
 2. **Prefer `item-key`** for large datasets / selection / expand / virtual rows. Without it, identity uses `JSON.stringify` (slow and fragile).
-3. **Virtualization is opt-in** — `virtual` defaults to `false`. Needs a positive `virtual-row-height` and a bounded scroll viewport (`table-height` recommended). Auto-disables with `#expand`, `#body-prepend`, `#body-append`.
+3. **Virtualization is opt-in** — `virtual` defaults to `false`. Needs a positive `virtual-row-height` and a bounded scroll viewport (`table-height` recommended). Auto-disables with `#expand`, `#body-prepend`, `#body-append` (not with built-in summary `<tfoot>`).
 4. **Server vs client mode**
    - **Client** (default): pass `items`; table searches, filters, sorts, and paginates locally.
    - **Server**: set `v-model:server-options` (non-null) + `server-items-length`; parent owns fetch/sort/page. Client search/filter/sort pipeline is skipped.
@@ -67,6 +67,8 @@ Source of truth for defaults: `src/propsWithDefault.ts` + required `headers` / `
 | Reaching for `#customize-headers` just to group columns | Prefer `Header.children`; `#customize-headers` still replaces the entire thead (binds `updateSortField` / `toggleSelectAll` / `getHeaderCellFixedStyle` if you need a fully custom thead) |
 | Custom thead + `fixed` columns sliding under later headers | Apply `getHeaderCellFixedStyle(header)` and class `fixed-column` (and `shadow` on the last frozen cell) |
 | Custom date/order sort looking wrong | Set `Header.sort` `(a, b) => number` in **client** mode; server mode must sort on the parent |
+| Expecting client totals in server mode | Pass precomputed totals via `summary-row`; `Header.summary` is ignored (warn once) |
+| `#body-append` totals disabled virtual | Prefer built-in `<tfoot>` summary (`Header.summary` / `summary-row`); virtual stays on |
 
 ## Testing commands (this repo)
 
@@ -82,4 +84,4 @@ Full local benches (not CI-gated on timings): `npm run bench`.
 
 ## Versioning
 
-Current line is **`1.6.1`** (see `package.json`). Public API is drop-in compatible with upstream 1.5.x; 1.6.x adds `item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, and `#customize-headers` sticky helpers.
+Current line is **`1.7.0`** (see `package.json`). Public API is drop-in compatible with upstream 1.5.x; 1.6.x adds `item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, and `#customize-headers` sticky helpers; 1.7.0 adds the built-in totals (summary) row.
