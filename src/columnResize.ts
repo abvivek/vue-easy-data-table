@@ -1,5 +1,22 @@
-/** Floor used when a leaf has no `minWidth`. Keeps the resize handle usable. */
+/** Floor used when a leaf has no `minWidth` and is already at least this wide. */
 export const COLUMN_RESIZE_FLOOR_PX = 48;
+
+/**
+ * Lower bound for a resize. An explicit `minWidth` wins.
+ * A column already narrower than the floor (checkbox / expand default to 36)
+ * keeps that width instead of snapping up to 48 on the first nudge.
+ */
+export function columnResizeMin(minWidth: number | undefined, configuredWidth?: number): number {
+  if (typeof minWidth === 'number' && Number.isFinite(minWidth)) return minWidth;
+  if (
+    typeof configuredWidth === 'number'
+    && configuredWidth > 0
+    && configuredWidth < COLUMN_RESIZE_FLOOR_PX
+  ) {
+    return configuredWidth;
+  }
+  return COLUMN_RESIZE_FLOOR_PX;
+}
 
 /** Clamp a dragged or keyboard-nudged column width to min/max (px). */
 export function clampColumnWidth(

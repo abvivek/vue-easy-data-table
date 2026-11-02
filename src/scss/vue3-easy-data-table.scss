@@ -368,9 +368,8 @@ table {
   user-select: none;
 }
 
-/* RTL: mirror expand chevron, frozen-column shadow, and pagination arrows.
-   Ancestor `dir`, `dir` on the table, or `.is-rtl` (computed direction, no attribute). */
-[dir="rtl"] .vue3-easy-data-table,
+/* RTL chrome follows the table's own direction (`is-rtl` from computed style,
+   or `dir` on the root). An ancestor `dir="rtl"` must not restyle an LTR table. */
 .vue3-easy-data-table[dir="rtl"],
 .vue3-easy-data-table.is-rtl {
   .vue3-easy-data-table__body :deep(td .expand-icon) {
@@ -387,7 +386,7 @@ table {
   }
   .vue3-easy-data-table__main.show-shadow :deep(th.shadow)::after,
   .vue3-easy-data-table__main.show-shadow :deep(td.shadow)::after,
-  .vue3-easy-data-table__summary td.shadow::after {
+  .vue3-easy-data-table__main.show-shadow .vue3-easy-data-table__summary td.shadow::after {
     box-shadow: inset -6px 0 5px -3px rgb(0 0 0 / 20%);
   }
   :deep(.previous-page__click-button .arrow) {

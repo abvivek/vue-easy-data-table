@@ -298,8 +298,8 @@ No breaking API. Leave the new props off for the previous layout.
 | `v-model:column-widths` | `{ [header.value]: number }` in px. `null` (default) keeps an internal map. The table never writes `Header.width`. |
 | `columnResize` | `{ value, width }` after a drag ends or an arrow-key nudge. |
 
-Drag grows the column toward the inline end (right in LTR, left in RTL). ArrowRight / ArrowLeft do the same. `Header.minWidth` and `Header.maxWidth` clamp the result.
+Drag grows the column toward the inline end (right in LTR, left in RTL). ArrowRight / ArrowLeft do the same. `Header.minWidth` and `Header.maxWidth` clamp the result. With no `minWidth`, the floor is 48px, or the column's own `width` when that is already smaller (checkbox and expand default to 36).
 
-**RTL:** set `dir="rtl"` on the table or any ancestor. Sticky columns use the inline start (`right` when RTL, `left` when LTR). `getHeaderCellFixedStyle(header)` already includes that side — custom thead markup should keep using it. `header-text-direction` / `body-text-direction` values `left` and `right` map to `start` and `end` (unchanged in LTR). Pagination arrows, the frozen-column shadow, and `border-cell` dividers follow the writing direction.
+**RTL:** set `dir="rtl"` on the table or any ancestor. The table follows its own computed direction, so `dir="ltr"` on the table stays LTR inside an RTL page. Sticky columns use the inline start (`right` when RTL, `left` when LTR). `getHeaderCellFixedStyle(header)` already includes that side — custom thead markup should keep using it. `header-text-direction` / `body-text-direction` values `left` and `right` map to `start` and `end` (unchanged in LTR). Pagination arrows, the frozen-column shadow, and `border-cell` dividers follow that same direction. The totals-row shadow appears only after the table scrolls away from the inline start.
 
 Exported types: `SummaryAggregation`, `SummaryScope`, `SummaryContext`, `SummaryFn`, `SummaryRow`. Aggregator helpers are also named exports from the package root.

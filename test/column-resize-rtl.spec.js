@@ -7,7 +7,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import DataTable from '../src/components/DataTable.vue';
-import { clampColumnWidth, resizeSignedDelta } from '../src/columnResize';
+import { clampColumnWidth, columnResizeMin, resizeSignedDelta } from '../src/columnResize';
 
 const items = [
   { name: 'Ada', age: 36 },
@@ -32,6 +32,10 @@ describe('column resize helpers', () => {
     expect(clampColumnWidth(100.4)).toBe(100);
     expect(resizeSignedDelta(40, false)).toBe(40);
     expect(resizeSignedDelta(40, true)).toBe(-40);
+    expect(columnResizeMin(undefined, 36)).toBe(36);
+    expect(columnResizeMin(undefined, 120)).toBe(48);
+    expect(columnResizeMin(80, 36)).toBe(80);
+    expect(clampColumnWidth(20, columnResizeMin(undefined, 36))).toBe(36);
   });
 });
 

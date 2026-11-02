@@ -413,7 +413,7 @@ import {
   scrolledFromInlineStart,
   stickyOffsetStyle,
 } from '../stickyColumns';
-import { clampColumnWidth, resizeSignedDelta } from '../columnResize';
+import { clampColumnWidth, columnResizeMin, resizeSignedDelta } from '../columnResize';
 import type { ColumnWidths } from '../types/main';
 import propsWithDefault from '../propsWithDefault';
 
@@ -983,11 +983,12 @@ const onColumnResizePointerDown = (event: PointerEvent, header: HeaderForRender)
   syncDirection();
   const handle = event.currentTarget as HTMLElement;
   const th = handle.closest('th');
+  const startWidth = measuredHeaderWidth(header, th);
   resizeDrag = {
     value: header.value,
     startX: event.clientX,
-    startWidth: measuredHeaderWidth(header, th),
-    minWidth: header.minWidth,
+    startWidth,
+    minWidth: columnResizeMin(header.minWidth, header.width),
     maxWidth: header.maxWidth,
     pointerId: event.pointerId,
     handle,
@@ -1013,9 +1014,10 @@ const onColumnResizeKeydown = (event: KeyboardEvent, header: HeaderForRender) =>
   const direction = event.key === 'ArrowRight' ? 1 : -1;
   const delta = resizeSignedDelta(direction * step, isRtl.value);
   const th = (event.currentTarget as HTMLElement).closest('th');
+  const current = measuredHeaderWidth(header, th);
   const width = clampColumnWidth(
-    measuredHeaderWidth(header, th) + delta,
-    header.minWidth,
+    current + delta,
+    columnResizeMin(header.minWidth, header.width),
     header.maxWidth,
   );
   commitColumnWidth(header.value, width, true);
