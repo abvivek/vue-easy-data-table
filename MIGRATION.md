@@ -255,7 +255,7 @@ const headers: Header[] = [
 
 **`#customize-headers`** still replaces the entire `<thead>`. Prefer `children` for grouped headers. The slot binds `headers` (leaf columns for render), `headerRows`, `updateSortField`, `toggleSelectAll`, `multipleSelectStatus`, `isMultiSorting`, `getMultiSortNumber`, **`getHeaderCellFixedStyle`**, **`getFixedDistance`**, **`lastFixedColumn`**, and **`fixedHeaders`**.
 
-Frozen custom `<th>` must apply `:style="getHeaderCellFixedStyle(header)"` and class `fixed-column` (plus `shadow` on the last fixed leaf/group). Do not reimplement painted-width `left`. `.fixed-header th` stays vertically sticky (`z-index` 3 / `STICKY_HEADER_Z_INDEX`); `th.fixed-column` wins at `z-index` 4 (`FIXED_COLUMN_HEADER_Z_INDEX`) with an opaque header background. Those rules pierce via `:deep()` so slotted `#customize-headers` cells match.
+Frozen custom `<th>` must apply `:style="getHeaderCellFixedStyle(header)"` and class `fixed-column` (plus `shadow` on the last fixed leaf/group). Do not reimplement the painted inline-start offset (`left` in LTR, `right` in RTL). `.fixed-header th` stays vertically sticky (`z-index` 3 / `STICKY_HEADER_Z_INDEX`); `th.fixed-column` wins at `z-index` 4 (`FIXED_COLUMN_HEADER_Z_INDEX`) with an opaque header background. Those rules pierce via `:deep()` so slotted `#customize-headers` cells match.
 
 CSS class hooks (`vue3-easy-data-table__header`, `sortable`, `direction-*`) are unchanged. Sort still lives on sortable leaves, not group parent cells.
 
@@ -287,5 +287,19 @@ No breaking API. Omit new fields for identical behavior (no `<tfoot>`).
 **Hand-rolled totals:** `#body-append` + `@update-total-items` (recipe 10) still works as a pre-1.7 workaround.
 
 **1.7.1 (additive):** `'length'` aggregation; named exports `computeSummaryValue`, `isSummaryAggregation`, `resolveHeaderSummary`; optional nested `summary-row` for server `summary-scope`.
+
+### Additive (1.8.0) — column resize and RTL
+
+No breaking API. Leave the new props off for the previous layout.
+
+| Prop / emit | Effect |
+| --- | --- |
+| `column-resizable` | `false` (default). `true` shows a separator on each **leaf** `<th>` and sets `table-layout: fixed`. |
+| `v-model:column-widths` | `{ [header.value]: number }` in px. `null` (default) keeps an internal map. The table never writes `Header.width`. |
+| `columnResize` | `{ value, width }` after a drag ends or an arrow-key nudge. |
+
+Drag grows the column toward the inline end (right in LTR, left in RTL). ArrowRight / ArrowLeft do the same. `Header.minWidth` and `Header.maxWidth` clamp the result.
+
+**RTL:** set `dir="rtl"` on the table or any ancestor. Sticky columns use the inline start (`right` when RTL, `left` when LTR). `getHeaderCellFixedStyle(header)` already includes that side — custom thead markup should keep using it. `header-text-direction` / `body-text-direction` values `left` and `right` map to `start` and `end` (unchanged in LTR). Pagination arrows, the frozen-column shadow, and `border-cell` dividers follow the writing direction.
 
 Exported types: `SummaryAggregation`, `SummaryScope`, `SummaryContext`, `SummaryFn`, `SummaryRow`. Aggregator helpers are also named exports from the package root.

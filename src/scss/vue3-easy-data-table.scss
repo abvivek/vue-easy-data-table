@@ -45,6 +45,22 @@
       }
     }
   }
+  &.border-cell {
+    .vue3-easy-data-table__header th {
+      border-inline-end: var(--easy-table-row-border);
+    }
+
+    .vue3-easy-data-table__header th:last-of-type {
+      border-inline-end: none;
+    }
+
+    .vue3-easy-data-table__body :deep(td) {
+      border-inline-end: var(--easy-table-row-border);
+    }
+    .vue3-easy-data-table__body :deep(td:last-of-type) {
+      border-inline-end: none;
+    }
+  }
   &.fixed-header {
     /* Vertically sticky header cells (STICKY_HEADER_Z_INDEX).
        :deep so #customize-headers <th> (parent-owned slot content) match. */
@@ -71,22 +87,6 @@
         color: var(--easy-table-body-row-hover-font-color);
         background-color: var(--easy-table-body-row-hover-background-color);
       }
-    }
-  }
-  &.border-cell {
-    .vue3-easy-data-table__header th {
-      border-right: var(--easy-table-row-border);
-    }
-
-    .vue3-easy-data-table__header th:last-of-type {
-      border-right: none;
-    }
-
-    .vue3-easy-data-table__body :deep(td) {
-      border-right: var(--easy-table-row-border);
-    }
-    .vue3-easy-data-table__body :deep(td:last-of-type) {
-      border-right: none;
     }
   }
 }
@@ -231,7 +231,7 @@ table {
   border-bottom: var(--easy-table-row-border);
 
   &.direction-left {
-    text-align: left;
+    text-align: start;
   }
 
   &.direction-center {
@@ -239,7 +239,7 @@ table {
   }
 
   &.direction-right {
-    text-align: right;
+    text-align: end;
   }
 
   .expand-icon {
@@ -269,7 +269,7 @@ table {
   .expand-loading {
     position: absolute;
     top: 0px;
-    left: 0px;
+    inset-inline-start: 0px;
   }
 }
 .vue3-easy-data-table__body :deep(td.can-expand) {
@@ -296,13 +296,13 @@ table {
     border-top: var(--easy-table-row-border);
 
     &.direction-left {
-      text-align: left;
+      text-align: start;
     }
     &.direction-center {
       text-align: center;
     }
     &.direction-right {
-      text-align: right;
+      text-align: end;
     }
   }
 }
@@ -320,10 +320,10 @@ table {
 
 .vue3-easy-data-table__main.border-cell .vue3-easy-data-table__summary {
   th.summary-cell, td.summary-cell {
-    border-right: var(--easy-table-row-border);
+    border-inline-end: var(--easy-table-row-border);
   }
   th.summary-cell:last-child, td.summary-cell:last-child {
-    border-right: none;
+    border-inline-end: none;
   }
 }
 
@@ -351,8 +351,28 @@ table {
   }
 }
 
-/* RTL quick wins: mirror expand chevron and fixed-column shadow side */
-[dir="rtl"] {
+/* Non-sticky headers still need a containing block for the resize handle. */
+.vue3-easy-data-table__main:not(.fixed-header) .vue3-easy-data-table__header th {
+  position: relative;
+}
+
+.column-resize-handle {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 1;
+  user-select: none;
+}
+
+/* RTL: mirror expand chevron, frozen-column shadow, and pagination arrows.
+   Ancestor `dir`, `dir` on the table, or `.is-rtl` (computed direction, no attribute). */
+[dir="rtl"] .vue3-easy-data-table,
+.vue3-easy-data-table[dir="rtl"],
+.vue3-easy-data-table.is-rtl {
   .vue3-easy-data-table__body :deep(td .expand-icon) {
     transform: rotate(135deg);
     &.expanding {
@@ -364,6 +384,17 @@ table {
   .vue3-easy-data-table__summary td.shadow::after {
     right: auto;
     left: -36px;
+  }
+  .vue3-easy-data-table__main.show-shadow :deep(th.shadow)::after,
+  .vue3-easy-data-table__main.show-shadow :deep(td.shadow)::after,
+  .vue3-easy-data-table__summary td.shadow::after {
+    box-shadow: inset -6px 0 5px -3px rgb(0 0 0 / 20%);
+  }
+  :deep(.previous-page__click-button .arrow) {
+    transform: rotate(135deg);
+  }
+  :deep(.next-page__click-button .arrow) {
+    transform: rotate(-45deg);
   }
 }
 .vue3-easy-data-table__message {

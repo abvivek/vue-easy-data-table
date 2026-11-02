@@ -16,6 +16,8 @@ import {
   computeStickyDistances,
   parseHorizontalPadding,
   resolveColumnPaintedWidth,
+  scrolledFromInlineStart,
+  stickyOffsetStyle,
 } from '../src/stickyColumns';
 
 const items = [
@@ -70,6 +72,37 @@ describe('sticky distance helpers', () => {
     expect(resolveColumnPaintedWidth({
       configuredWidth: 80,
     })).toBe(80 + DEFAULT_CELL_HORIZONTAL_PADDING_PX);
+  });
+});
+
+describe('inline-start sticky offset', () => {
+  it('pins to the left in LTR and the right in RTL', () => {
+    expect(stickyOffsetStyle(0, 4, false)).toEqual({
+      position: 'sticky',
+      zIndex: 4,
+      left: '0px',
+    });
+    expect(stickyOffsetStyle(120, 2, true)).toEqual({
+      position: 'sticky',
+      zIndex: 2,
+      right: '120px',
+      left: 'auto',
+    });
+  });
+
+  it('detects scroll away from the inline start in both writing modes', () => {
+    expect(scrolledFromInlineStart(0, 500, 200, false)).toBe(false);
+    expect(scrolledFromInlineStart(12, 500, 200, false)).toBe(true);
+    // Chromium: 0 at inline start, negative once scrolled
+    expect(scrolledFromInlineStart(0, 500, 200, true, 'negative')).toBe(false);
+    expect(scrolledFromInlineStart(-20, 500, 200, true, 'negative')).toBe(true);
+    // Firefox: inline start is the max scroll offset
+    expect(scrolledFromInlineStart(300, 500, 200, true, 'positive-descending')).toBe(false);
+    expect(scrolledFromInlineStart(40, 500, 200, true, 'positive-descending')).toBe(true);
+    // Safari: 0 at inline start, positive once scrolled
+    expect(scrolledFromInlineStart(0, 500, 200, true, 'positive-ascending')).toBe(false);
+    expect(scrolledFromInlineStart(12, 500, 200, true, 'positive-ascending')).toBe(true);
+    expect(scrolledFromInlineStart(0, 200, 200, true, 'negative')).toBe(false);
   });
 });
 
