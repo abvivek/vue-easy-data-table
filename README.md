@@ -11,7 +11,7 @@
 
 A Vue 3 data table with sorting, search, pagination, selection, fixed columns, and slots — plus opt-in virtual rows, grouped headers, and better server-side DX.
 
-This is an actively maintained fork of [`vue3-easy-data-table`](https://github.com/HC200ok/vue3-easy-data-table). **1.7.1** is drop-in compatible with upstream 1.5.x; new APIs are additive.
+This is an actively maintained fork of [`vue3-easy-data-table`](https://github.com/HC200ok/vue3-easy-data-table). **1.8.0** is drop-in compatible with upstream 1.5.x; new APIs are additive.
 
 ```bash
 npm install vue-easy-data-table
@@ -25,8 +25,10 @@ npm install vue-easy-data-table
 
 Upstream last published in 2023. This package keeps the same component API and CSS class hooks, and ships fixes plus features that were stuck as README todos:
 
-| 1.7.1 | What you get |
+| 1.8.0 | What you get |
 | --- | --- |
+| **Column resize** | Opt-in `column-resizable` handles; `v-model:column-widths` (does not mutate `headers`) |
+| **RTL** | Sticky columns, shadow, borders, and pagination follow `dir="rtl"` |
 | **Summary row** | Built-in `<tfoot>` totals (`Header.summary` including `length`, `summary-row`, named `computeSummaryValue` export, `#summary*` slots); virtual stays on |
 | **`item-key`** | Stable row identity for selection, expand, and virtual tables (skip slow `JSON.stringify`) |
 | **Virtual rows** | Opt-in windowing of the current page (`virtual` + `virtual-row-height`) |
@@ -101,7 +103,8 @@ Full props / slots / emits / CSS variables: **[docs/API.md](./docs/API.md)**.
 | Pagination | Footer, rows-per-page, optional numbered buttons; `v-model:current-page` in client mode |
 | Selection | `v-model:items-selected` (must be non-`null` to show checkboxes) |
 | Slots | Item, header, expand, loading, empty, pagination, body, `#customize-headers` |
-| Fixed columns | `Header.fixed` + `width`; sticky `left` follows painted width |
+| Fixed columns | `Header.fixed` + `width`; sticky inline-start follows painted width (RTL pins to the right) |
+| Column resize | `column-resizable` + `v-model:column-widths` (off by default) |
 | Layout | `table-height`, alternating rows, border cells, theme color, class-name hooks |
 | Virtual rows | `:virtual="true"` + `:virtual-row-height` + preferably `table-height` and `item-key` |
 | Grouped headers | `Header.children` (prefer this over `#customize-headers` for groups) |
@@ -134,7 +137,7 @@ Component name, props, slots, emits, and CSS classes stay the same. Details: **[
 | --- | --- |
 | [docs/API.md](./docs/API.md) | Props, slots, emits, expose, CSS variables |
 | [docs/RECIPES.md](./docs/RECIPES.md) | Vue 3 SFC examples |
-| [MIGRATION.md](./MIGRATION.md) | Rename + 1.6.x–1.7.0 additive behavior |
+| [MIGRATION.md](./MIGRATION.md) | Rename + 1.6.x–1.8.0 additive behavior |
 | [CHANGELOG.md](./CHANGELOG.md) | Release notes |
 | [AGENTS.md](./AGENTS.md) | Install rules and pitfalls (also for AI agents) |
 | [Upstream feature gallery](https://hc200ok.github.io/vue3-easy-data-table-doc/) | Visual examples; APIs still apply |

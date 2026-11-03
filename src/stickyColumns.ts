@@ -77,7 +77,96 @@ export function resolveColumnPaintedWidth(options: ResolveColumnPaintedWidthOpti
   return configuredWidth + horizontalPadding;
 }
 
-/** Cumulative `left` offsets: distances[i] = sum(paintedWidths[0..i-1]). */
+/**
+ * Sticky offset for one frozen cell.
+ * LTR pins with `left`. RTL pins with `right` (inline start).
+ * The binding replaces the whole style, so the unused side is cleared.
+ */
+export function stickyOffsetStyle(
+  distancePx: number,
+  zIndex: number,
+  rtl: boolean,
+): { position: 'sticky'; zIndex: number; left?: string; right?: string } {
+  if (rtl) {
+    return {
+      position: 'sticky',
+      zIndex,
+      right: `${distancePx}px`,
+      left: 'auto',
+    };
+  }
+  return {
+    position: 'sticky',
+    zIndex,
+    left: `${distancePx}px`,
+  };
+}
+
+/**
+ * How the browser reports `scrollLeft` when `direction` is `rtl`.
+ * - `negative`: Chromium. 0 at the inline start, negative once scrolled.
+ * - `positive-descending`: Firefox. Inline start is `scrollWidth - clientWidth`.
+ * - `positive-ascending`: Safari. 0 at the inline start, positive once scrolled.
+ */
+export type RtlScrollType = 'negative' | 'positive-descending' | 'positive-ascending';
+
+let cachedRtlScrollType: RtlScrollType | null = null;
+
+/** Probe once. Falls back to Chromium (`negative`) when the DOM cannot scroll. */
+export function detectRtlScrollType(): RtlScrollType {
+  if (cachedRtlScrollType) return cachedRtlScrollType;
+  if (typeof document === 'undefined' || !document.body) {
+    cachedRtlScrollType = 'negative';
+    return cachedRtlScrollType;
+  }
+  const outer = document.createElement('div');
+  const inner = document.createElement('div');
+  outer.dir = 'rtl';
+  outer.style.width = '4px';
+  outer.style.height = '1px';
+  outer.style.overflow = 'scroll';
+  outer.style.position = 'absolute';
+  outer.style.top = '-9999px';
+  inner.style.width = '8px';
+  inner.style.height = '1px';
+  outer.appendChild(inner);
+  document.body.appendChild(outer);
+  try {
+    if (outer.scrollLeft > 0) {
+      cachedRtlScrollType = 'positive-descending';
+    } else {
+      outer.scrollLeft = 1;
+      cachedRtlScrollType = outer.scrollLeft === 0 ? 'negative' : 'positive-ascending';
+    }
+  } catch {
+    cachedRtlScrollType = 'negative';
+  } finally {
+    outer.remove();
+  }
+  return cachedRtlScrollType;
+}
+
+/**
+ * True when the scrollport has moved away from the inline start.
+ * Pass `scrollType` in tests; otherwise the browser is probed once.
+ */
+export function scrolledFromInlineStart(
+  scrollLeft: number,
+  scrollWidth: number,
+  clientWidth: number,
+  rtl: boolean,
+  scrollType?: RtlScrollType,
+): boolean {
+  if (!rtl) return scrollLeft > 0;
+  const max = scrollWidth - clientWidth;
+  if (max <= 0) return false;
+  const type = scrollType ?? detectRtlScrollType();
+  if (type === 'negative') return scrollLeft < -0.5;
+  if (type === 'positive-ascending') return scrollLeft > 0.5;
+  return scrollLeft < max - 0.5;
+}
+
+/** Cumulative inline-start offsets: distances[i] = sum(paintedWidths[0..i-1]). */
 export function computeStickyDistances(paintedWidths: number[]): number[] {
   const distances: number[] = [];
   let acc = 0;

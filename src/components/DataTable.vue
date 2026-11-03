@@ -2,7 +2,7 @@
   <div
     ref="dataTable"
     class="vue3-easy-data-table"
-    :class="[tableClassName]"
+    :class="[tableClassName, { 'is-rtl': isRtl }]"
   >
     <div
       ref="tableBody"
@@ -11,7 +11,7 @@
         'fixed-header': fixedHeader,
         'fixed-height': tableHeight,
         'show-shadow': showShadow,
-        'table-fixed': fixedHeaders.length,
+        'table-fixed': fixedHeaders.length || columnResizable,
         'hoverable': !noHover,
         'border-cell': borderCell,
       }"
@@ -125,6 +125,17 @@
                   {{ getMultiSortNumber(header.value) }}
                 </span>
               </span>
+              <span
+                v-if="columnResizable && !header.isGroup"
+                class="column-resize-handle"
+                role="separator"
+                aria-orientation="vertical"
+                tabindex="0"
+                :aria-label="`Resize column ${header.text || header.value}`"
+                @pointerdown.stop.prevent="onColumnResizePointerDown($event, header)"
+                @click.stop.prevent
+                @keydown.stop="onColumnResizeKeydown($event, header)"
+              />
             </th>
           </tr>
         </thead>
@@ -399,7 +410,11 @@ import {
   readCellHorizontalPadding,
   readPaintedColumnWidths,
   resolveColumnPaintedWidth,
+  scrolledFromInlineStart,
+  stickyOffsetStyle,
 } from '../stickyColumns';
+import { clampColumnWidth, columnResizeMin, resizeSignedDelta } from '../columnResize';
+import type { ColumnWidths } from '../types/main';
 import propsWithDefault from '../propsWithDefault';
 
 const props = defineProps({
@@ -454,6 +469,7 @@ const {
   tableHeight,
   tableMinHeight,
   themeColor,
+  columnResizable,
   rowsOfPageSeparatorMessage,
   showIndexSymbol,
   preventContextMenuRow,
@@ -493,7 +509,38 @@ provide('dataTable', dataTable);
 const showShadow = ref(false);
 const measuredColumnWidths = ref<number[]>([]);
 const cellHorizontalPadding = ref(DEFAULT_CELL_HORIZONTAL_PADDING_PX);
+const isRtl = ref(false);
+const columnWidthOverrides = ref<ColumnWidths>({});
 let columnWidthObserver: ResizeObserver | null = null;
+let directionObserver: MutationObserver | null = null;
+
+const columnWidthsProp = toRef(props, 'columnWidths');
+watch(columnWidthsProp, (value) => {
+  if (value == null) return;
+  columnWidthOverrides.value = { ...value };
+}, { deep: true, immediate: true });
+
+const syncDirection = () => {
+  const el = dataTable.value as HTMLElement | undefined;
+  if (!el || typeof getComputedStyle !== 'function') {
+    isRtl.value = false;
+    return;
+  }
+  isRtl.value = getComputedStyle(el).direction === 'rtl';
+};
+
+const observeDirection = () => {
+  if (typeof MutationObserver === 'undefined') return;
+  directionObserver?.disconnect();
+  directionObserver = new MutationObserver(() => {
+    syncDirection();
+  });
+  let node = dataTable.value as HTMLElement | null;
+  while (node) {
+    directionObserver.observe(node, { attributes: true, attributeFilter: ['dir', 'style'] });
+    node = node.parentElement;
+  }
+};
 
 const measurePaintedColumnWidths = () => {
   const root = tableBody.value as HTMLElement | undefined;
@@ -518,14 +565,28 @@ onMounted(() => {
     );
   }
 
+  syncDirection();
+  observeDirection();
+
   tableBody.value?.addEventListener('scroll', () => {
-    showShadow.value = tableBody.value.scrollLeft > 0;
+    const el = tableBody.value as HTMLElement | undefined;
+    if (!el) return;
+    syncDirection();
+    showShadow.value = scrolledFromInlineStart(
+      el.scrollLeft,
+      el.scrollWidth,
+      el.clientWidth,
+      isRtl.value,
+    );
   });
 });
 
 onBeforeUnmount(() => {
   columnWidthObserver?.disconnect();
   columnWidthObserver = null;
+  directionObserver?.disconnect();
+  directionObserver = null;
+  detachResizeListeners();
 });
 
 const emits = defineEmits([
@@ -541,7 +602,9 @@ const emits = defineEmits([
   'update:currentPage',
   'updatePageItems',
   'updateTotalItems',
-  'selectAll'
+  'selectAll',
+  'update:columnWidths',
+  'columnResize',
 ]);
 
 const isMultipleSelectable = computed((): boolean => itemsSelected.value !== null);
@@ -737,12 +800,22 @@ const rowsForRender = computed(() => {
   return pageItems.value.map((item, index) => ({ item, index }));
 });
 
+/** Leaf widths after resize. Does not mutate the consumer `headers` array. */
+const headersForLayout = computed(() => {
+  const overrides = columnWidthOverrides.value;
+  if (!Object.keys(overrides).length) return headersForRender.value;
+  return headersForRender.value.map((header) => {
+    const width = overrides[header.value];
+    return width == null ? header : { ...header, width };
+  });
+});
+
 const {
   fixedHeaders,
   lastFixedColumn,
   fixedColumnsInfos,
 } = useFixedColumn(
-  headersForRender,
+  headersForLayout,
   measuredColumnWidths,
   cellHorizontalPadding,
 );
@@ -805,9 +878,17 @@ const onSortableHeaderKeydown = (
   updateSortField(column, sortType);
 };
 
+const effectiveColumnWidth = (header: HeaderForRender): number | null => {
+  const override = columnWidthOverrides.value[header.value];
+  if (typeof override === 'number' && Number.isFinite(override)) return override;
+  if (typeof header.width === 'number') return header.width;
+  if (fixedHeaders.value.length) return 100;
+  return null;
+};
+
 // template style generation function
 const getColStyle = (header: HeaderForRender): string | undefined => {
-  const width = header.width ?? (fixedHeaders.value.length ? 100 : null);
+  const width = effectiveColumnWidth(header);
   const minWidth = header.minWidth ?? width;
   const { maxWidth } = header;
   const parts: string[] = [];
@@ -820,7 +901,7 @@ const getColStyle = (header: HeaderForRender): string | undefined => {
 const fixedTableMinWidthStyle = computed(() => {
   if (!fixedHeaders.value.length) return undefined;
   const padding = cellHorizontalPadding.value;
-  const minWidth = headersForRender.value.reduce((sum, header) => (
+  const minWidth = headersForLayout.value.reduce((sum, header) => (
     sum + resolveColumnPaintedWidth({
       configuredWidth: header.width ?? 100,
       horizontalPadding: padding,
@@ -833,11 +914,113 @@ const getFixedDistance = (column: string, type: 'td' | 'th' = 'th'): CSSProperti
   if (!fixedHeaders.value.length) return undefined;
   const columInfo = fixedColumnsInfos.value.find((info) => info.value === column);
   if (!columInfo) return undefined;
-  return {
-    left: `${columInfo.distance}px`,
-    position: 'sticky',
-    zIndex: type === 'th' ? FIXED_COLUMN_HEADER_Z_INDEX : FIXED_COLUMN_BODY_Z_INDEX,
+  return stickyOffsetStyle(
+    columInfo.distance,
+    type === 'th' ? FIXED_COLUMN_HEADER_Z_INDEX : FIXED_COLUMN_BODY_Z_INDEX,
+    isRtl.value,
+  );
+};
+
+type ResizeDrag = {
+  value: string
+  startX: number
+  startWidth: number
+  minWidth?: number
+  maxWidth?: number
+  pointerId: number
+  handle: HTMLElement
+  moved: boolean
+};
+
+let resizeDrag: ResizeDrag | null = null;
+
+const measuredHeaderWidth = (header: HeaderForRender, th: HTMLElement | null): number => {
+  const known = effectiveColumnWidth(header);
+  if (known != null) return known;
+  const painted = th?.getBoundingClientRect().width ?? 0;
+  if (painted > 0) return painted;
+  return header.minWidth ?? 100;
+};
+
+const commitColumnWidth = (value: string, width: number, emitResize: boolean) => {
+  const next = { ...columnWidthOverrides.value, [value]: width };
+  columnWidthOverrides.value = next;
+  emits('update:columnWidths', next);
+  if (emitResize) emits('columnResize', { value, width });
+};
+
+const onResizePointerMove = (event: PointerEvent) => {
+  if (!resizeDrag || event.pointerId !== resizeDrag.pointerId) return;
+  const delta = resizeSignedDelta(event.clientX - resizeDrag.startX, isRtl.value);
+  const width = clampColumnWidth(
+    resizeDrag.startWidth + delta,
+    resizeDrag.minWidth,
+    resizeDrag.maxWidth,
+  );
+  if (width !== columnWidthOverrides.value[resizeDrag.value]) resizeDrag.moved = true;
+  commitColumnWidth(resizeDrag.value, width, false);
+};
+
+const detachResizeListeners = () => {
+  if (!resizeDrag) return;
+  const { handle } = resizeDrag;
+  handle.removeEventListener('pointermove', onResizePointerMove);
+  handle.removeEventListener('pointerup', onResizePointerUp);
+  handle.removeEventListener('pointercancel', onResizePointerUp);
+  resizeDrag = null;
+};
+
+const onResizePointerUp = (event: PointerEvent) => {
+  if (!resizeDrag || event.pointerId !== resizeDrag.pointerId) return;
+  const { value, moved } = resizeDrag;
+  const width = columnWidthOverrides.value[value];
+  detachResizeListeners();
+  if (moved && width != null) emits('columnResize', { value, width });
+};
+
+const onColumnResizePointerDown = (event: PointerEvent, header: HeaderForRender) => {
+  if (!columnResizable.value || header.isGroup) return;
+  syncDirection();
+  const handle = event.currentTarget as HTMLElement;
+  const th = handle.closest('th');
+  const startWidth = measuredHeaderWidth(header, th);
+  resizeDrag = {
+    value: header.value,
+    startX: event.clientX,
+    startWidth,
+    minWidth: columnResizeMin(header.minWidth, header.width),
+    maxWidth: header.maxWidth,
+    pointerId: event.pointerId,
+    handle,
+    moved: false,
   };
+  if (typeof handle.setPointerCapture === 'function') {
+    try {
+      handle.setPointerCapture(event.pointerId);
+    } catch {
+      // happy-dom and some older hosts omit pointer capture
+    }
+  }
+  handle.addEventListener('pointermove', onResizePointerMove);
+  handle.addEventListener('pointerup', onResizePointerUp);
+  handle.addEventListener('pointercancel', onResizePointerUp);
+};
+
+const onColumnResizeKeydown = (event: KeyboardEvent, header: HeaderForRender) => {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+  event.preventDefault();
+  syncDirection();
+  const step = event.shiftKey ? 24 : 8;
+  const direction = event.key === 'ArrowRight' ? 1 : -1;
+  const delta = resizeSignedDelta(direction * step, isRtl.value);
+  const th = (event.currentTarget as HTMLElement).closest('th');
+  const current = measuredHeaderWidth(header, th);
+  const width = clampColumnWidth(
+    current + delta,
+    columnResizeMin(header.minWidth, header.width),
+    header.maxWidth,
+  );
+  commitColumnWidth(header.value, width, true);
 };
 
 const getHeaderCellFixedStyle = (header: HeaderForRender): CSSProperties | undefined => {

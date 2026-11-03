@@ -127,6 +127,15 @@ export type BodyItemClassNameFunction = (column: string, rowNumber: number) => s
 
 export type TextDirection = 'center' | 'left' | 'right'
 
+/** Live column widths (px) keyed by `header.value`. */
+export type ColumnWidths = Record<string, number>
+
+/** Payload for the `columnResize` emit (pointer-up or keyboard nudge). */
+export type ColumnResizePayload = {
+  value: string
+  width: number
+}
+
 /**
  * Optional prop: field path for stable row identity (e.g. `"id"` or `"meta.uuid"`).
  * When set, select/expand identity and row keys use this value instead of

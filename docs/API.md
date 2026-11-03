@@ -184,9 +184,11 @@ These types plus helpers `computeSummaryValue`, `isSummaryAggregation`, and `res
 | `hide-header` | `boolean` | `false` | Hide `<thead>`. |
 | `alternating` | `boolean` | `false` | Alternating row class (`row-alternation` / even-row styling). |
 | `no-hover` | `boolean` | `false` | Disable row hover styles. |
-| `border-cell` | `boolean` | `false` | Cell borders. |
-| `header-text-direction` | `'center' \| 'left' \| 'right'` | `'left'` | Header text alignment class. |
-| `body-text-direction` | `'center' \| 'left' \| 'right'` | `'left'` | Body cell alignment class. |
+| `border-cell` | `boolean` | `false` | Cell borders (inline-end, so RTL dividers sit between columns). |
+| `column-resizable` | `boolean` | `false` | Leaf header resize handles. Does not mutate `headers`. Also sets `table-layout: fixed`. |
+| `column-widths` | `Record<string, number> \| null` | `null` | Width overrides in px, keyed by `header.value`. `v-model:column-widths`. `null` = internal map. |
+| `header-text-direction` | `'center' \| 'left' \| 'right'` | `'left'` | Header alignment. `left` / `right` follow the writing direction (`start` / `end`). |
+| `body-text-direction` | `'center' \| 'left' \| 'right'` | `'left'` | Body cell alignment. Same writing-direction mapping as the header. |
 | `theme-color` | `string` | `'#42b883'` | Accent (provided to children; checkboxes/loading accents). |
 | `table-class-name` | `string` | `''` | Extra class on root `.vue3-easy-data-table`. |
 | `header-class-name` | `string` | `''` | Extra class on `<thead>`. |
@@ -219,7 +221,7 @@ These types plus helpers `computeSummaryValue`, `isSummaryAggregation`, and `res
 | `pagination` | `{ isFirstPage, isLastPage, currentPaginationNumber, maxPaginationNumber, nextPage, prevPage }` | Replace default pagination controls. |
 | `loading` | — | Custom loading entity inside the loading mask. |
 | `empty-message` | — | Custom empty state (default uses `emptyMessage` prop). |
-| `customize-headers` | `{ headers, headerRows, updateSortField, toggleSelectAll, multipleSelectStatus, isMultiSorting, getMultiSortNumber, getHeaderCellFixedStyle, getFixedDistance, lastFixedColumn, fixedHeaders }` | When present, replaces default `<thead>` entirely. Prefer `Header.children` for grouped headers. Slot props let a custom thead keep sort / select-all / **fixed columns** without copying painted-width math. Frozen custom `<th>` must use `:style="getHeaderCellFixedStyle(header)"` plus class `fixed-column` (and `shadow` when it is the last fixed leaf/group). Class `fixed-column` also supplies the opaque header background and stacking so later headers cannot paint through. |
+| `customize-headers` | `{ headers, headerRows, updateSortField, toggleSelectAll, multipleSelectStatus, isMultiSorting, getMultiSortNumber, getHeaderCellFixedStyle, getFixedDistance, lastFixedColumn, fixedHeaders }` | When present, replaces default `<thead>` entirely. Prefer `Header.children` for grouped headers. Slot props let a custom thead keep sort / select-all / **fixed columns** without copying painted-width math. Frozen custom `<th>` must use `:style="getHeaderCellFixedStyle(header)"` plus class `fixed-column` (and `shadow` when it is the last fixed leaf/group). The style is `left` in LTR and `right` in RTL. Class `fixed-column` also supplies the opaque header background and stacking so later headers cannot paint through. |
 
 Slot forwarding: `DataTableBodyRow` re-exposes parent slots, so `item-*` / `expand` / `item` work as documented in upstream feature docs.
 
@@ -242,6 +244,8 @@ Slot forwarding: `DataTableBodyRow` re-exposes parent slots, so `item-*` / `expa
 | `updateFilter` | filter options | When `filterOptions` change (watched). |
 | `updatePageItems` | current page items | Deep watch on `pageItems`. |
 | `updateTotalItems` | filtered/sorted total items (client) | Deep watch on `totalItems`. |
+| `update:columnWidths` | `ColumnWidths` | `v-model:column-widths`. Emitted while dragging and on keyboard resize. |
+| `columnResize` | `{ value: string, width: number }` | Pointer-up after a drag that changed width, or ArrowLeft/ArrowRight on the handle. |
 
 ```ts
 type ClickRowArgument = Item & {
@@ -307,7 +311,9 @@ Root defaults live in `DataTable.vue` `<style>` (`:root`). Stylesheets: `src/scs
 | `summary-cell` | Every totals `<th>` / `<td>` (also carries `direction-*` and `Header.className`) |
 | `summary-label` | The `summary-text` label cell (`<th scope="row">`, also `summary-cell`) |
 | `sortable` / `asc` / `desc` / `none` | Sortable `<th>` |
-| `fixed-column` | Frozen `<th>` / `<td>` (`position: sticky` + painted `left`). Custom `#customize-headers` cells must add this class (also supplies the opaque header background so later headers cannot paint through). |
+| `fixed-column` | Frozen `<th>` / `<td>` (`position: sticky` + painted inline-start: `left` in LTR, `right` in RTL). Custom `#customize-headers` cells must add this class (also supplies the opaque header background so later headers cannot paint through). |
+| `column-resize-handle` | Leaf-header separator when `column-resizable` is true. |
+| `is-rtl` | On the root after mount when computed `direction` is `rtl`. |
 | `shadow` | Last frozen cell (inset shadow when the table is scrolled horizontally), including the totals row. |
 | `expand-icon` / `expanding` | Expand control |
 | `easy-checkbox` | Checkbox UI (see checkbox SCSS) |

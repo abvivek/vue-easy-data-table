@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.0
+
+Additive column resize and RTL layout (no breaking API; 1.7.x consumers stay drop-in):
+
+- **`column-resizable`** (default `false`): drag handle on each leaf header. Widths are not written back onto `Header` objects. `v-model:column-widths` (`Record<header.value, px>`) syncs the live map; `@column-resize` fires on pointer-up and on ArrowLeft/ArrowRight (`Shift` = 24px, otherwise 8px). `minWidth` / `maxWidth` clamp the size (floor 48px when `minWidth` is omitted, unless the column is already narrower, such as the 36px checkbox and expand columns). Group parent cells are not resizable. Turning the prop on sets `table-layout: fixed` so the `<col>` widths stick.
+- **RTL**: with `dir="rtl"` on the table or an ancestor (or computed `direction: rtl`, which adds class `is-rtl` after mount), frozen columns stick to the inline start (`right` instead of `left`). The scroll shadow, expand chevron, pagination arrows, and cell borders follow the same direction. `left` / `right` text alignment uses `start` / `end`, so LTR looks the same and RTL follows the writing direction.
+- Custom `#customize-headers` cells that apply `getHeaderCellFixedStyle` / `getFixedDistance` pick up the RTL side automatically.
+
+See [MIGRATION.md](./MIGRATION.md) and [docs/API.md](./docs/API.md).
+
 ## 1.7.1
 
 Additive summary-row DX (no breaking API; 1.7.0 consumers stay drop-in):

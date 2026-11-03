@@ -75,6 +75,8 @@ Source of truth for defaults: `src/propsWithDefault.ts` + required `headers` / `
 | Virtual totals matching only painted rows | `<tfoot>` uses full `pageItems` / `totalItems`, same as client; virtual does not window the summary |
 | `#body-append` totals disabled virtual | Prefer built-in `<tfoot>` summary (`Header.summary` / `summary-row`); virtual stays on |
 | Avg showing a long float | `avg` is a raw float; format in `#summary-{value}` |
+| Column resize writing `Header.width` | It does not. Use `v-model:column-widths` or `@column-resize`. `column-resizable` defaults to `false` |
+| RTL frozen columns stuck on the physical left | Set `dir="rtl"` on the table or an ancestor. Sticky offset is the inline start (`right` in RTL) |
 
 ## Testing commands (this repo)
 
@@ -90,4 +92,4 @@ Full local benches (not CI-gated on timings): `npm run bench`.
 
 ## Versioning
 
-Current line is **`1.7.1`** (see `package.json`). Public API is drop-in compatible with upstream 1.5.x; 1.6.x adds `item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, and `#customize-headers` sticky helpers; 1.7.0 adds the built-in totals (summary) row; 1.7.1 is additive (`length`, named aggregator exports, optional nested `summary-row`).
+Current line is **`1.8.0`** (see `package.json`). Public API is drop-in compatible with upstream 1.5.x; 1.6.x adds `item-key`, `virtual*`, `server-select-all`, a11y, grouped headers, and `#customize-headers` sticky helpers; 1.7.0 adds the built-in totals (summary) row; 1.7.1 is additive (`length`, named aggregator exports, optional nested `summary-row`); 1.8.0 adds opt-in column resize and RTL sticky/layout.

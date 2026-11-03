@@ -545,3 +545,37 @@ npm install vue-easy-data-table
 ```
 
 Props/slots/emits stay compatible. Opt into fork features (`item-key`, `virtual`, `server-select-all`, …) as needed — see [MIGRATION.md](../MIGRATION.md).
+
+---
+
+## 13. Resizable columns and RTL
+
+Resize is off until `column-resizable` is set. Widths live in `columnWidths`, not on the `headers` array.
+
+```vue
+<script setup>
+import { ref } from 'vue';
+import Vue3EasyDataTable from 'vue-easy-data-table';
+import 'vue-easy-data-table/dist/style.css';
+
+const headers = [
+  { text: 'Name', value: 'name', width: 160, minWidth: 80 },
+  { text: 'Age', value: 'age', width: 90 },
+];
+const items = [{ name: 'Ada', age: 36 }];
+const columnWidths = ref({});
+</script>
+
+<template>
+  <div dir="rtl">
+    <Vue3EasyDataTable
+      :headers="headers"
+      :items="items"
+      column-resizable
+      v-model:column-widths="columnWidths"
+    />
+  </div>
+</template>
+```
+
+`dir="rtl"` on the table or any ancestor pins frozen columns to the right and flips the resize drag axis, pagination arrows, and the fixed-column shadow. Arrow keys on a focused handle nudge the width (Shift = 24px).

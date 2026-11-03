@@ -2,7 +2,7 @@ import { PropType } from 'vue';
 import type {
   SortType, Item, ServerOptions, ServerSelectAll, FilterOption,
   HeaderItemClassNameFunction, BodyItemClassNameFunction, BodyRowClassNameFunction,
-  TextDirection, SummaryRow, SummaryScope,
+  TextDirection, SummaryRow, SummaryScope, ColumnWidths,
 } from './types/main';
 import type { ClickEventType } from './types/internal';
 
@@ -198,6 +198,23 @@ export default {
   borderCell: {
     type: Boolean,
     default: false,
+  },
+  /**
+   * Opt-in leaf-column resize handles. Off by default so column widths stay
+   * as authored. Does not write `Header.width`; track sizes with
+   * `v-model:column-widths` or `@column-resize`.
+   */
+  columnResizable: {
+    type: Boolean,
+    default: false,
+  },
+  /**
+   * Controlled widths (px) keyed by `header.value`. `null` keeps an internal
+   * map (uncontrolled). When set, this object is the source of truth.
+   */
+  columnWidths: {
+    type: Object as PropType<ColumnWidths> | null,
+    default: null,
   },
   mustSort: {
     type: Boolean,
